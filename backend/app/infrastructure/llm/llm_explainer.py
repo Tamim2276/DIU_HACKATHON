@@ -177,7 +177,9 @@ DEFAULT_MODELS = ("gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.8-flash")
 HEAD_START_SECONDS = 4.0  # a model that has not answered by then gets company: the next one is asked as well
 SECONDS_PER_TRY = 12.0
 SECONDS_IN_ALL = 15.0  # after this the customer gets the standard explanation instead of waiting longer
-MAX_OUTPUT_TOKENS = 2048  # this also covers the model's own thinking, so it is well above the length of an answer
+# This also covers the model's own thinking, which was measured at up to 2,000 tokens for an answer of 90.
+# With too small an allowance the answer is cut off in the middle of a sentence.
+MAX_OUTPUT_TOKENS = 8192
 
 
 def gemini(api_key: str, models: tuple[str, ...] = DEFAULT_MODELS, post=httpx.post) -> Ask:
@@ -199,7 +201,11 @@ def gemini(api_key: str, models: tuple[str, ...] = DEFAULT_MODELS, post=httpx.po
             response = post(GEMINI_URL.format(model=model), headers={"x-goog-api-key": api_key}, json=body,
                             timeout=SECONDS_PER_TRY)
             response.raise_for_status()
-            parts = response.json()["candidates"][0]["content"]["parts"]
+            candidate = response.json()["candidates"][0]
+            finished = candidate.get("finishReason", "STOP")
+            if finished != "STOP":  # cut off at the token limit, or stopped by a filter: not an answer to show
+                raise ValueError(f"the reply was not finished ({finished})")
+            parts = candidate["content"]["parts"]
             return "".join(part.get("text", "") for part in parts if not part.get("thought"))
 
         not_asked, waiting = list(models), set()

@@ -2,7 +2,7 @@ import Icon from "./Icon.jsx";
 
 // The row of screens: along the bottom on a phone, under the header on a wide screen.
 // Left and right arrow keys move between tabs, as in any tab list.
-export default function TabBar({ tabs, current, onChoose }) {
+export default function TabBar({ tabs, current, onChoose, label }) {
   function onKeyDown(event) {
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
     if (!step) return;
@@ -14,7 +14,7 @@ export default function TabBar({ tabs, current, onChoose }) {
   }
 
   return (
-    <nav className="tabs" aria-label="Screens">
+    <nav className="tabs" aria-label={label}>
       <div className="tab-list" role="tablist" onKeyDown={onKeyDown}>
         {tabs.map((tab) => (
           <button

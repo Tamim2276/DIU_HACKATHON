@@ -6,21 +6,22 @@ export const LOADING = "loading";
 export const READY = "ready";
 export const FAILED = "failed";
 
-// The model's test results, for the Model report screen. They do not depend on the chosen customer.
+// The model's test results and the impact test's, for the Model report screen.
+// They do not depend on the chosen customer. The impact results are an extra:
+// when they are missing, `impact` is null and the rest of the screen still shows.
 export function useMetrics() {
-  const [state, setState] = useState({ status: LOADING, metrics: null, error: null });
+  const [state, setState] = useState({ status: LOADING, metrics: null, impact: null, error: null });
   const [run, setRun] = useState(0);
 
   useEffect(() => {
     let outdated = false;
-    setState({ status: LOADING, metrics: null, error: null });
-    api
-      .metrics()
-      .then((metrics) => {
-        if (!outdated) setState({ status: READY, metrics, error: null });
+    setState({ status: LOADING, metrics: null, impact: null, error: null });
+    Promise.all([api.metrics(), api.impact().catch(() => null)])
+      .then(([metrics, impact]) => {
+        if (!outdated) setState({ status: READY, metrics, impact, error: null });
       })
       .catch((error) => {
-        if (!outdated) setState({ status: FAILED, metrics: null, error: error.message });
+        if (!outdated) setState({ status: FAILED, metrics: null, impact: null, error: error.message });
       });
     return () => {
       outdated = true;

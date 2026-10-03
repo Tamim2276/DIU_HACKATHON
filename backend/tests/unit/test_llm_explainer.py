@@ -184,8 +184,9 @@ def test_a_rejected_answer_is_not_remembered():
 class FakeResponse:
     """What a model sends back: a status, the parts of its reply, and how long it takes."""
 
-    def __init__(self, status: int = 200, text: str = GOOD, parts: list | None = None, seconds: float = 0.0):
-        self.status, self.seconds = status, seconds
+    def __init__(self, status: int = 200, text: str = GOOD, parts: list | None = None, seconds: float = 0.0,
+                 finish: str = "STOP"):
+        self.status, self.seconds, self.finish = status, seconds, finish
         self.parts = [{"text": text}] if parts is None else parts
 
     def raise_for_status(self):
@@ -193,7 +194,7 @@ class FakeResponse:
             raise RuntimeError(f"status {self.status}")
 
     def json(self):
-        return {"candidates": [{"content": {"parts": self.parts}}]}
+        return {"candidates": [{"content": {"parts": self.parts}, "finishReason": self.finish}]}
 
 
 def fake_post(responses: dict, calls: list):
@@ -225,6 +226,17 @@ def test_the_models_thinking_is_left_out_of_the_reply():
     parts = [{"text": "let me think", "thought": True}, {"text": "Part one. "}, {"text": "Part two."}]
     ask = gemini("key", ("model-a",), post=fake_post({"model-a": FakeResponse(parts=parts)}, []))
     assert ask("rules", "message") == "Part one. Part two."
+
+
+def test_a_reply_that_was_cut_off_is_not_used():
+    calls = []
+    responses = {"cut-off": FakeResponse(text="Your next income is", finish="MAX_TOKENS"), "whole": FakeResponse()}
+    ask = gemini("key", ("cut-off", "whole"), post=fake_post(responses, calls))
+    assert ask("rules", "message") == GOOD and asked(calls) == ["cut-off", "whole"]
+    alone = gemini("key", ("cut-off",), post=fake_post(responses, []))
+    with pytest.raises(ValueError, match="not finished"):
+        alone("rules", "message")
+    assert answer(alone) == STANDARD  # the customer gets the standard explanation, not half a sentence
 
 
 def test_a_model_that_answers_at_once_is_the_only_one_asked():

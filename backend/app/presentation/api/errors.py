@@ -6,7 +6,7 @@ from app.application.ports.forecaster import NotEnoughHistoryError
 from app.application.ports.metrics_store import MetricsUnavailableError
 from app.application.ports.transaction_repository import UserNotFoundError
 from app.application.use_cases.explain_alert import UnknownLanguageError
-from app.application.use_cases.get_forecast import InvalidDayError
+from app.application.use_cases.get_forecast import InvalidDayError, InvalidGoalError
 from app.application.use_cases.run_what_if import UnknownActionError
 
 
@@ -21,6 +21,10 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(InvalidDayError)
     def invalid_day(request: Request, error: InvalidDayError) -> JSONResponse:
+        return JSONResponse(status_code=422, content={"detail": str(error)})
+
+    @app.exception_handler(InvalidGoalError)
+    def invalid_goal(request: Request, error: InvalidGoalError) -> JSONResponse:
         return JSONResponse(status_code=422, content={"detail": str(error)})
 
     @app.exception_handler(UnknownActionError)

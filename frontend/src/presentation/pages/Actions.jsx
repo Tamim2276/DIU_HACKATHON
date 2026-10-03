@@ -1,70 +1,73 @@
 import { FAILED as FORECAST_FAILED } from "../../application/useForecast.js";
 import { FAILED, LOADING, useWhatIf } from "../../application/useWhatIf.js";
-import { percent, taka, weekDay } from "../../domain/format.js";
 import { lowestPoint } from "../../domain/forecastSeries.js";
-import { actionName } from "../../domain/labels.js";
 import ContextBar from "../components/ContextBar.jsx";
 import ForecastChart, { ChartKey } from "../components/ForecastChart.jsx";
 import Icon from "../components/Icon.jsx";
 import { Failed, Loading } from "../components/ScreenState.jsx";
+import { useText } from "../language.jsx";
+import { isOutdated } from "./Home.jsx";
 
-// What the chosen actions change: the warning and the lowest likely balance, now and with them.
+// The sentence for one action, written from the figures the API sends with it.
+// An action the app does not know yet falls back to the API's own English sentence.
+function sentence(action, t, f) {
+  const { details } = action;
+  switch (action.id) {
+    case "keep_to_safe_spend":
+      return t.actions.keep(f.taka(details.safe_per_day), f.shortDay(details.until), f.taka(details.usual_per_day));
+    case "move_payment":
+      return t.actions.move(
+        f.taka(details.amount),
+        t.payments[details.label] ?? t.payments.other,
+        f.shortDay(details.to),
+        f.shortDay(details.from),
+      );
+    case "pay_directly":
+      return t.actions.pay(f.taka(details.fees_last_30_days));
+    default:
+      return action.title;
+  }
+}
+
+// What the chosen actions change: the warning and the lowest balance we expect, now and with them.
 function Outcome({ forecast, changed, count, available, meta }) {
-  const under = `under ${percent(meta.alert_level)}`;
+  const { t, f } = useText();
+  const text = t.actions;
+  const level = f.percent(meta.alert_level);
   const before = forecast.alert;
   const after = changed ? changed.alert : before;
-  const these = count === 1 ? "this action" : "these actions";
+  const several = count > 1;
 
   let view;
   if (available === 0) {
-    view = {
-      tone: before ? "warn" : "note",
-      icon: before ? "warning" : "info",
-      eyebrow: "Where things stand",
-      title: before ? "The warning stands" : "Nothing needs to change",
-      text: before
-        ? `The forecast shows a shortfall warning for ${weekDay(before.date)}, and there is no suggested action to try against it.`
-        : "There is no shortfall warning, and no action is suggested.",
-    };
+    view = before
+      ? { tone: "warn", icon: "warning", eyebrow: text.standing, title: text.stands, text: text.standsText(f.weekDay(before.date)) }
+      : { tone: "note", icon: "info", eyebrow: text.standing, title: text.nothingNeeded, text: text.nothingNeededText };
   } else if (count === 0) {
     view = {
       tone: "note",
       icon: "info",
-      eyebrow: "What would change",
-      title: "Switch an action on to see what it changes",
-      text: before
-        ? `The forecast shows a shortfall warning for ${weekDay(before.date)}.`
-        : "There is no shortfall warning at the moment. An action would still leave more in the wallet.",
+      eyebrow: text.eyebrow,
+      title: text.switchOn,
+      text: before ? text.switchOnWarned(f.weekDay(before.date)) : text.switchOnClear,
     };
   } else if (!changed) {
-    view = { tone: "note", icon: "info", eyebrow: "What would change", title: "Working it out", text: "" };
+    view = { tone: "note", icon: "info", eyebrow: text.eyebrow, title: text.working, text: "" };
   } else if (before && !after) {
-    view = {
-      tone: "ok",
-      icon: "check",
-      eyebrow: "What would change",
-      title: `With ${these}, the warning goes away`,
-      text: `The chance of a shortfall falls below ${percent(meta.alert_level)}, the level at which a warning is shown.`,
-    };
+    view = { tone: "ok", icon: "check", eyebrow: text.eyebrow, title: text.gone(several), text: text.goneText(level) };
   } else if (before && after) {
     const lower = before.probability - after.probability >= 0.01;
     view = {
       tone: "warn",
       icon: "warning",
-      eyebrow: "What would change",
-      title: lower ? "The warning stays, but the risk is lower" : "The warning stays",
+      eyebrow: text.eyebrow,
+      title: lower ? text.lower : text.stays,
       text: lower
-        ? `With ${these}, the chance of a shortfall falls from ${percent(before.probability)} to ${percent(after.probability)}.`
-        : `${count === 1 ? "This action helps" : "These actions help"} a little, but not enough to remove the warning.`,
+        ? text.lowerText(several, f.percent(before.probability), f.percent(after.probability))
+        : text.staysText(several),
     };
   } else {
-    view = {
-      tone: "ok",
-      icon: "check",
-      eyebrow: "What would change",
-      title: "More is left in the wallet",
-      text: `There was no shortfall warning, and with ${these} there is still none.`,
-    };
+    view = { tone: "ok", icon: "check", eyebrow: text.eyebrow, title: text.more, text: text.moreText(several) };
   }
 
   const lowBefore = lowestPoint(forecast.points);
@@ -85,20 +88,20 @@ function Outcome({ forecast, changed, count, available, meta }) {
         <thead>
           <tr>
             <td />
-            <th scope="col">Now</th>
-            <th scope="col">With {count > 1 ? "the actions" : "the action"}</th>
+            <th scope="col">{text.now}</th>
+            <th scope="col">{text.withIt(several)}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <th scope="row">Chance of a shortfall</th>
-            <td>{before ? percent(before.probability) : under}</td>
-            <td>{!changed ? "–" : after ? percent(after.probability) : under}</td>
+            <th scope="row">{text.chance}</th>
+            <td>{before ? f.percent(before.probability) : text.under(level)}</td>
+            <td>{!changed ? "–" : after ? f.percent(after.probability) : text.under(level)}</td>
           </tr>
           <tr>
-            <th scope="row">Lowest likely balance</th>
-            <td>{taka(lowBefore.p50)}</td>
-            <td>{lowAfter ? taka(lowAfter.p50) : "–"}</td>
+            <th scope="row">{text.lowest}</th>
+            <td>{f.taka(lowBefore.p50)}</td>
+            <td>{lowAfter ? f.taka(lowAfter.p50) : "–"}</td>
           </tr>
         </tbody>
       </table>
@@ -108,22 +111,24 @@ function Outcome({ forecast, changed, count, available, meta }) {
 
 // The suggested actions, each with a switch. Switching one asks the API for the forecast with it.
 export default function Actions({ users, meta, selection, forecastState, actionIds, onToggle, goTo }) {
+  const { t, f } = useText();
+  const text = t.actions;
   const { status, forecast, error, reload } = forecastState;
-  const whatIf = useWhatIf(selection.userId, selection.asOf, actionIds);
+  const whatIf = useWhatIf(selection.userId, selection.asOf, actionIds, selection.goal);
 
   if (status === FORECAST_FAILED) {
     return (
       <div className="stack">
         <ContextBar users={users} selection={selection} goTo={goTo} />
-        <Failed title="The forecast could not be loaded" error={error} onRetry={reload} />
+        <Failed title={t.state.forecastFailed} error={error} onRetry={reload} />
       </div>
     );
   }
-  if (!forecast || forecast.user_id !== selection.userId || forecast.as_of !== selection.asOf) {
+  if (!forecast || isOutdated(forecast, selection)) {
     return (
       <div className="stack">
         <ContextBar users={users} selection={selection} goTo={goTo} />
-        <Loading heights={[280, 420]} label="Loading the forecast" />
+        <Loading heights={[280, 420]} />
       </div>
     );
   }
@@ -138,40 +143,31 @@ export default function Actions({ users, meta, selection, forecastState, actionI
 
       <div className="actions-grid">
         <section className="card" aria-labelledby="actions-title">
-          <h1 id="actions-title">What you can do</h1>
+          <h1 id="actions-title">{text.title}</h1>
           {forecast.actions.length === 0 ? (
-            <p className="card-text">
-              Nothing in this customer's history points to a step that would help. The best that can be done is to keep
-              spending as low as possible until more money comes in.
-            </p>
+            <p className="card-text">{text.none}</p>
           ) : (
             <>
-              <p className="card-text">
-                Each of these either saves money or shifts the date of a payment. None is a loan or a paid product.
-                Switch one on to see the forecast with it.
-              </p>
+              <p className="card-text">{text.intro}</p>
               <ul className="action-list">
-                {forecast.actions.map((action) => {
-                  const on = actionIds.includes(action.id);
-                  return (
-                    <li key={action.id}>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={on}
-                        className="action"
-                        onClick={() => onToggle(action.id)}
-                      >
-                        <span className="action-words">
-                          <strong>{actionName(action.id)}</strong>
-                          <span>{action.title}</span>
-                          <small>Adds about {taka(action.effect)} on the forecast's tightest day.</small>
-                        </span>
-                        <span className="switch" aria-hidden="true" />
-                      </button>
-                    </li>
-                  );
-                })}
+                {forecast.actions.map((action) => (
+                  <li key={action.id}>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={actionIds.includes(action.id)}
+                      className="action"
+                      onClick={() => onToggle(action.id)}
+                    >
+                      <span className="action-words">
+                        <strong>{text.names[action.id] ?? text.other}</strong>
+                        <span>{sentence(action, t, f)}</span>
+                        <small>{text.adds(f.taka(action.effect))}</small>
+                      </span>
+                      <span className="switch" aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
               </ul>
             </>
           )}
@@ -186,11 +182,11 @@ export default function Actions({ users, meta, selection, forecastState, actionI
             aria-busy={whatIf.status === LOADING}
           >
             <h2 id="whatif-chart-title" className="card-title">
-              {count > 0 ? "The forecast with the action" : "The forecast as it is"}
+              {count > 0 ? text.chartWith : text.chartPlain}
             </h2>
             {whatIf.status === FAILED && (
               <p className="card-text warn-text" role="alert">
-                This could not be worked out: {whatIf.error} Switch the action off and on to try again.
+                {text.failed(whatIf.error)}
               </p>
             )}
             <ForecastChart forecast={shown} before={changed ? forecast : null} />

@@ -1,17 +1,31 @@
 import { FAILED } from "../../application/useServer.js";
+import { useText } from "../language.jsx";
+
+// A sentence with the server's address inside it, set in its own typeface.
+function WithAddress({ parts }) {
+  const [before, address, after] = parts;
+  return (
+    <p>
+      {before}
+      <code>{address}</code>
+      {after}
+    </p>
+  );
+}
 
 // Shown in place of a screen while the API has not answered: never a blank page.
 export default function ConnectionNotice({ server }) {
+  const { t, f } = useText();
+  const text = t.connection;
+
   if (server.status === FAILED) {
     return (
       <section className="card notice" role="alert">
-        <h1>The server did not answer</h1>
-        <p>
-          Nothing answered at <code>{server.address}</code>. Check that the API is running there, then try again.
-        </p>
+        <h1>{text.failed}</h1>
+        <WithAddress parts={text.failedText(server.address)} />
         <p className="reason">{server.error}</p>
         <button type="button" className="button" onClick={server.retry}>
-          Try again
+          {text.tryAgain}
         </button>
       </section>
     );
@@ -21,16 +35,13 @@ export default function ConnectionNotice({ server }) {
   return (
     <section className="card notice" aria-busy="true">
       <span className="spinner" aria-hidden="true" />
-      <h1>{noAnswerYet ? "Starting the server" : "Connecting"}</h1>
+      <h1>{noAnswerYet ? text.starting : text.connecting}</h1>
       {noAnswerYet && (
         <>
-          <p>
-            No answer yet from <code>{server.address}</code>. On a free host the server sleeps when nobody visits and
-            needs about a minute to wake up.
-          </p>
+          <WithAddress parts={text.noAnswer(server.address)} />
           <p className="reason">
-            Trying again every few seconds.
-            {server.waitedSeconds >= 3 && ` Waited ${server.waitedSeconds} seconds so far.`}
+            {text.trying}
+            {server.waitedSeconds >= 3 && text.waited(f.number(server.waitedSeconds))}
           </p>
         </>
       )}

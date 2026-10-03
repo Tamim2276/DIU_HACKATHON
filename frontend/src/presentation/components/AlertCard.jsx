@@ -1,27 +1,32 @@
-import { dayCount, daysBetween, fromNow, percent, taka, weekDay, whole } from "../../domain/format.js";
+import { daysBetween, whole } from "../../domain/format.js";
 import { CLEAR, LOW_NOW, RECOVERING, SHORTFALL, statusOf } from "../../domain/status.js";
+import { useText } from "../language.jsx";
 import Icon from "./Icon.jsx";
 
 // The first thing a customer reads: is a shortfall likely, or not?
 // What to say comes from the forecast. Only the words are chosen here.
-function describe(forecast, meta) {
-  const { alert, balance, cushion, as_of: today } = forecast;
-  const ahead = dayCount(meta.warning_days);
+function describe(forecast, meta, t, f) {
+  const { alert, as_of: today } = forecast;
+  const text = t.status;
+  const balance = f.taka(forecast.balance);
+  const cushion = f.taka(forecast.cushion);
+  const period = t.days(f.number(meta.warning_days));
+  // the cushion is one day of the customer's usual spending unless the rule was changed
+  const oneDay = Math.abs(forecast.cushion / (forecast.typical_daily_spending || 1) - 1) < 0.05;
 
   switch (statusOf(forecast)) {
     case SHORTFALL: {
+      const away = daysBetween(today, alert.date);
       const empty = whole(alert.gap) >= whole(alert.cushion); // the cautious forecast reaches zero
       return {
         tone: "warn",
         icon: "warning",
-        eyebrow: "Shortfall warning",
-        title: `You may run short around ${weekDay(alert.date)}`,
-        text: `That is ${fromNow(daysBetween(today, alert.date))}. Your balance may fall below your safety cushion of ${taka(cushion)}.`,
+        eyebrow: text.warning,
+        title: text.shortfallTitle(f.weekDay(alert.date)),
+        text: text.shortfallText(t.fromNow(f.number(away), away), cushion, oneDay),
         figures: [
-          { value: percent(alert.probability), label: "chance of a shortfall" },
-          empty
-            ? { value: taka(0), label: "left in a cautious estimate" }
-            : { value: taka(alert.gap), label: "below the cushion, in a cautious estimate" },
+          { value: f.percent(alert.probability), label: text.chance },
+          empty ? { value: f.taka(0), label: text.left } : { value: f.taka(alert.gap), label: text.short },
         ],
       };
     }
@@ -29,18 +34,20 @@ function describe(forecast, meta) {
       return {
         tone: "warn",
         icon: "warning",
-        eyebrow: "Shortfall warning",
-        title: "Your balance is already low",
-        text: `${taka(balance)} today is under your safety cushion of ${taka(cushion)}. It may be short again in the next ${ahead}.`,
-        figures: [{ value: percent(alert.probability), label: "chance of a shortfall" }],
+        eyebrow: text.warning,
+        title: text.lowNowTitle,
+        text: text.lowNowText(balance, cushion, period),
+        figures: [{ value: f.percent(alert.probability), label: text.chance }],
       };
     case RECOVERING:
       return {
         tone: "note",
         icon: "info",
-        eyebrow: "No warning",
-        title: "Low today, but expected to recover",
-        text: `${taka(balance)} today is under your safety cushion of ${taka(cushion)}. The forecast expects it to rise above that level again, so there is no shortfall warning for the next ${ahead}.`,
+        eyebrow: text.noWarning,
+        title: text.recoveringTitle,
+        text: text.recoveringText(balance, cushion, period),
+        // no warning, yet the payments due are more than the money expected: say so, or the two cards disagree
+        extra: forecast.safe_to_spend_parts.left_over < 0 ? text.recoveringButPayments : null,
         figures: [],
       };
     case CLEAR:
@@ -48,16 +55,17 @@ function describe(forecast, meta) {
       return {
         tone: "ok",
         icon: "check",
-        eyebrow: "All clear",
-        title: `No shortfall warning for the next ${ahead}`,
-        text: `Your balance is ${taka(balance)}, above your safety cushion of ${taka(cushion)}.`,
+        eyebrow: text.allClear,
+        title: text.clearTitle(period),
+        text: text.clearText(balance, cushion),
         figures: [],
       };
   }
 }
 
 export default function AlertCard({ forecast, meta, goTo }) {
-  const view = describe(forecast, meta);
+  const { t, f } = useText();
+  const view = describe(forecast, meta, t, f);
   const warned = view.tone === "warn";
 
   return (
@@ -68,6 +76,7 @@ export default function AlertCard({ forecast, meta, goTo }) {
       </p>
       <h1 id="status-title">{view.title}</h1>
       <p className="status-text">{view.text}</p>
+      {view.extra && <p className="status-text">{view.extra}</p>}
 
       {view.figures.length > 0 && (
         <dl className="figures">
@@ -84,22 +93,22 @@ export default function AlertCard({ forecast, meta, goTo }) {
         {warned ? (
           <>
             <button type="button" className="button" onClick={() => goTo("actions")}>
-              See what you can do
+              {t.status.seeActions}
               <Icon name="arrow" size={18} />
             </button>
             <button type="button" className="button quiet" onClick={() => goTo("ask")}>
-              Why?
+              {t.status.why}
             </button>
           </>
         ) : (
           <button type="button" className="button quiet" onClick={() => goTo("forecast")}>
-            See the forecast
+            {t.status.seeForecast}
             <Icon name="arrow" size={18} />
           </button>
         )}
       </div>
 
-      {warned && <p className="footnote">A warning is shown when the chance reaches {percent(meta.alert_level)}.</p>}
+      {warned && <p className="footnote">{t.status.rule(f.percent(meta.alert_level))}</p>}
     </section>
   );
 }

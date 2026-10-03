@@ -1,11 +1,14 @@
-import { addDays, isDay, shortDay, weekDay } from "../../domain/format.js";
-import { personaName } from "../../domain/labels.js";
+import { addDays, isDay } from "../../domain/format.js";
 import { byPersona } from "../../domain/selection.js";
+import { useText } from "../language.jsx";
+import DayField from "./DayField.jsx";
 import Icon from "./Icon.jsx";
 
 // The demo's controls: which customer is shown, and which day counts as today.
 // In a real wallet there is no such choice: it is the signed-in customer, today.
 export default function UserSwitcher({ users, meta, selection, onChoose }) {
+  const { t } = useText();
+  const text = t.switcher;
   const groups = byPersona(users);
   const current = groups.find((group) => group.users.some((user) => user.user_id === selection.userId));
   const { asOf } = selection;
@@ -14,24 +17,16 @@ export default function UserSwitcher({ users, meta, selection, onChoose }) {
     if (isDay(day) && day >= meta.first_day && day <= meta.last_day) onChoose({ asOf: day });
   }
 
-  function openCalendar(event) {
-    try {
-      event.currentTarget.showPicker?.();
-    } catch {
-      // the browser opens its calendar in its own way
-    }
-  }
-
   return (
     <section className="switcher" aria-labelledby="switcher-title">
       <div className="switcher-head">
         <h2 id="switcher-title" className="label">
-          Demo customer
+          {text.title}
         </h2>
-        <p className="hint">In a real wallet this is the signed-in customer, today.</p>
+        <p className="hint">{text.hint}</p>
       </div>
 
-      <div className="chips" role="group" aria-label="Kind of customer">
+      <div className="chips" role="group" aria-label={text.kind}>
         {groups.map((group) => (
           <button
             key={group.persona}
@@ -40,14 +35,14 @@ export default function UserSwitcher({ users, meta, selection, onChoose }) {
             aria-pressed={group === current}
             onClick={() => group !== current && onChoose({ userId: group.first.user_id })}
           >
-            {personaName(group.first)}
+            {t.personas[group.persona] ?? group.first.persona_label}
           </button>
         ))}
       </div>
 
       <div className="fields">
         <label className="field">
-          <span>Customer</span>
+          <span>{text.customer}</span>
           <select value={selection.userId} onChange={(event) => onChoose({ userId: event.target.value })}>
             {current.users.map((user) => (
               <option key={user.user_id} value={user.user_id}>
@@ -58,37 +53,20 @@ export default function UserSwitcher({ users, meta, selection, onChoose }) {
         </label>
 
         <div className="field">
-          <label htmlFor="today">Today is</label>
+          <label htmlFor="today">{text.today}</label>
           <div className="stepper">
             <button
               type="button"
-              aria-label="One day earlier"
+              aria-label={text.earlier}
               disabled={asOf <= meta.first_day}
               onClick={() => chooseDay(addDays(asOf, -1))}
             >
               <Icon name="left" size={18} />
             </button>
-            {/* The day is written out by the app, because a browser's own date box shows 08/12 or 12/08
-                depending on the device. The real date box lies on top, unseen, and opens the calendar. */}
-            <span className="day">
-              <Icon name="calendar" size={16} />
-              <span aria-hidden="true">
-                <span className="wide-only">{weekDay(asOf).split(" ")[0]} </span>
-                {shortDay(asOf)} {asOf.slice(0, 4)}
-              </span>
-              <input
-                id="today"
-                type="date"
-                value={asOf}
-                min={meta.first_day}
-                max={meta.last_day}
-                onChange={(event) => chooseDay(event.target.value)}
-                onClick={openCalendar}
-              />
-            </span>
+            <DayField id="today" value={asOf} min={meta.first_day} max={meta.last_day} onChange={chooseDay} />
             <button
               type="button"
-              aria-label="One day later"
+              aria-label={text.later}
               disabled={asOf >= meta.last_day}
               onClick={() => chooseDay(addDays(asOf, 1))}
             >
@@ -99,7 +77,7 @@ export default function UserSwitcher({ users, meta, selection, onChoose }) {
 
         {asOf !== meta.default_day && (
           <button type="button" className="text-button" onClick={() => chooseDay(meta.default_day)}>
-            Back to the demo day
+            {text.back}
           </button>
         )}
       </div>

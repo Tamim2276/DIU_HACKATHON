@@ -29,6 +29,10 @@ def get_metrics_use_case(request: Request) -> GetMetrics:
     return request.app.state.get_metrics
 
 
+def get_impact_use_case(request: Request) -> GetMetrics:
+    return request.app.state.get_impact
+
+
 def explain_alert_use_case(request: Request) -> ExplainAlert:
     return request.app.state.explain_alert
 

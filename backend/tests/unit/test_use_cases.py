@@ -21,7 +21,7 @@ from app.application.ports.forecaster import Forecaster, NotEnoughHistoryError
 from app.application.ports.metrics_store import MetricsStore, MetricsUnavailableError
 from app.application.ports.transaction_repository import TransactionRepository, UserNotFoundError
 from app.application.use_cases.explain_alert import ExplainAlert, UnknownLanguageError, best_action, gather_facts
-from app.application.use_cases.get_forecast import GetForecast, InvalidDayError, assess
+from app.application.use_cases.get_forecast import GetForecast, InvalidDayError, InvalidGoalError, assess
 from app.application.use_cases.get_metrics import GetMetrics
 from app.application.use_cases.list_users import ListUsers
 from app.application.use_cases.run_what_if import RunWhatIf, UnknownActionError
@@ -32,6 +32,7 @@ from app.domain.entities.regular_payment import DuePayment
 from app.domain.entities.transaction import MONEY_OUT, Transaction
 from app.domain.entities.user import User
 from app.domain.services.income_pattern import MONTHLY, IncomePattern
+from app.domain.services.savings_goal import SavingsGoal
 from app.domain.services.shortfall import find_shortfall
 
 TODAY = date(2026, 8, 12)
@@ -160,6 +161,33 @@ def test_too_little_history_is_passed_on():
 
     with pytest.raises(NotEnoughHistoryError):
         GetForecast(FakeRepository(), Refuses()).execute("U0001", TODAY)
+
+
+# ---------- savings goal ----------
+
+def test_a_savings_goal_is_taken_out_of_the_safe_to_spend_amount():
+    use_case = GetForecast(FakeRepository(), FakeForecaster())
+    plain = use_case.execute("U0001", TODAY).assessment
+    assert plain.safe_to_spend.amount == 257.0 and plain.savings is None  # (4,000 - 400) / 14
+
+    # 2,800 in 28 days is 100 a day; 14 of those days are in the period: (4,000 - 400 - 1,400) / 14
+    saving = use_case.execute("U0001", TODAY, SavingsGoal(2800.0, TODAY + timedelta(days=28))).assessment
+    assert saving.safe_to_spend.amount == 157.0 and saving.safe_to_spend.savings == 1400.0
+    assert (saving.savings.per_day, saving.savings.set_aside, saving.savings.safe_before) == (100.0, 1400.0, 257.0)
+    assert saving.forecast == plain.forecast and saving.alert == plain.alert  # the forecast does not change
+
+
+def test_a_goal_that_cannot_be_used_is_refused():
+    use_case = GetForecast(FakeRepository(), FakeForecaster())
+    for goal in (SavingsGoal(0.0, TODAY + timedelta(days=10)), SavingsGoal(500.0, TODAY),
+                 SavingsGoal(500.0, TODAY + timedelta(days=500))):
+        with pytest.raises(InvalidGoalError):
+            use_case.execute("U0001", TODAY, goal)
+
+
+def test_the_usual_everyday_spending_is_part_of_the_result():
+    assessment = GetForecast(SpenderRepository(), FakeForecaster(likely=300.0)).execute("U0001", TODAY).assessment
+    assert assessment.usual_spending == 492.8  # 29 days of 300 at shops and six cash-outs of 1,014, over 30 days
 
 
 # ---------- what-if ----------

@@ -105,8 +105,15 @@ def _schedule(persona: Persona, rng, cfg: Settings, n_days: int, scale: float, h
     return events
 
 
-def simulate_user(uid: str, persona: Persona, rng: np.random.Generator, cfg: Settings, eid_window: np.ndarray):
-    """One user's transactions, hidden daily truth and hidden settings."""
+def simulate_user(uid: str, persona: Persona, rng: np.random.Generator, cfg: Settings, eid_window: np.ndarray,
+                  advisor=None, trace: list | None = None):
+    """One user's transactions, hidden daily truth and hidden settings.
+
+    `advisor` and `trace` are used only by the impact test (impact.py). An advisor is called each
+    day with the day number, the user's transactions up to yesterday and the amount the user wants
+    to spend today, and returns the amount they will try to spend instead. With no advisor the
+    simulation runs exactly as before and produces the same data.
+    """
     n_days = len(eid_window)
     income = persona.income
 
@@ -223,8 +230,12 @@ def simulate_user(uid: str, persona: Persona, rng: np.random.Generator, cfg: Set
         boost = 1 + payday_boost * math.exp(-(i - last_big_income) / 4)
         level = daily_base * boost * (1.15 if weekday in (4, 5) else 1.0) * (1.45 if eid else 1.0)
         level *= _lognormal(rng, 0.35)
+        digital_today = rng.random() < p_digital
+        wanted_level = level  # what the user wants to spend today, before any advice
+        if advisor is not None:
+            level = advisor(i, rows, level)
         need_cash = level * persona.cash_share
-        need_digital = level * (1 - persona.cash_share) / p_digital if rng.random() < p_digital else 0.0
+        need_digital = level * (1 - persona.cash_share) / p_digital if digital_today else 0.0
         desired = need_cash + need_digital
 
         paid = 0.0
@@ -269,6 +280,9 @@ def simulate_user(uid: str, persona: Persona, rng: np.random.Generator, cfg: Set
             rows.append((uid, midnight + timedelta(days=i, seconds=int(second)), *row))
         truth.append((uid, cfg.start_date + timedelta(days=i), wallet, round(cash, 2), round(desired, 2),
                       round(unmet, 2), squeeze, borrowed, len(pending), missed))
+        if trace is not None:
+            wanted = desired * wanted_level / level if level > 0 else 0.0  # the day's need had no advice been followed
+            trace.append((i, wanted, desired, spent_cash + paid, squeeze, borrowed, len(pending), missed))
 
     hidden = {
         "user_id": uid,
@@ -285,21 +299,25 @@ def simulate_user(uid: str, persona: Persona, rng: np.random.Generator, cfg: Set
     return rows, truth, hidden
 
 
-def generate(cfg: Settings = settings) -> SyntheticData:
-    """The full synthetic data set. The same settings always give the same data."""
+def eid_window(cfg: Settings) -> np.ndarray:
+    """For every simulated day: is it one of the ten days before an Eid? Those carry extra spending and shop sales."""
     n_days = (cfg.end_date - cfg.start_date).days + 1
-    # the ten days before each Eid carry extra spending and extra shop sales
-    eid_window = np.array([
+    return np.array([
         any(0 < (eid - (cfg.start_date + timedelta(days=i))).days <= 10 for eid in cfg.eid_dates)
         for i in range(n_days)
     ])
+
+
+def generate(cfg: Settings = settings) -> SyntheticData:
+    """The full synthetic data set. The same settings always give the same data."""
+    window = eid_window(cfg)
     master = np.random.default_rng(cfg.seed)
     rows, truth, hidden = [], [], []
     for persona in PERSONAS.values():
         for _ in range(cfg.users_per_persona):
             uid = f"U{len(hidden) + 1:04d}"
             rng = np.random.default_rng(master.integers(1 << 32))
-            user_rows, user_truth, user_hidden = simulate_user(uid, persona, rng, cfg, eid_window)
+            user_rows, user_truth, user_hidden = simulate_user(uid, persona, rng, cfg, window)
             rows += user_rows
             truth += user_truth
             hidden.append(user_hidden)

@@ -14,15 +14,20 @@ from app.domain.entities.forecast import Forecast
 from app.domain.entities.regular_payment import DuePayment, RegularPayment
 from app.domain.entities.transaction import Transaction
 from app.domain.entities.user import User
-from app.domain.services.actions import suggest_actions
+from app.domain.services.actions import everyday_spending_per_day, suggest_actions
 from app.domain.services.income_pattern import IncomePattern, find_income_pattern, next_income_day
 from app.domain.services.regular_payments import find_regular_payments, upcoming_payments
 from app.domain.services.safe_to_spend import SafeToSpend, plan_safe_to_spend
+from app.domain.services.savings_goal import SavingsGoal, SavingsPlan, per_day, problem_with, set_aside
 from app.domain.services.shortfall import find_shortfall, safety_cushion
 
 
 class InvalidDayError(ValueError):
     """The requested day is outside the days the data covers."""
+
+
+class InvalidGoalError(ValueError):
+    """The savings goal has no amount, or a date that cannot be used."""
 
 
 @dataclass(frozen=True)
@@ -38,6 +43,8 @@ class Assessment:
     regular_payments: list[RegularPayment]
     due_payments: list[DuePayment]
     actions: list[Action]
+    usual_spending: float = 0.0  # taka a day on everyday things over the last 30 days
+    savings: SavingsPlan | None = None  # the user's savings goal, when they set one
 
 
 @dataclass(frozen=True)
@@ -47,14 +54,26 @@ class ForecastResult:
     actual: dict[date, float]  # the real end-of-day balance on forecast days the data already covers
 
 
-def assess(forecast: Forecast, history: list[Transaction]) -> Assessment:
-    """Run every rule on one forecast. `history` is the user's transactions up to the forecast's day."""
+def assess(forecast: Forecast, history: list[Transaction], goal: SavingsGoal | None = None) -> Assessment:
+    """Run every rule on one forecast. `history` is the user's transactions up to the forecast's day.
+
+    With a savings goal, the money it sets aside is taken out of the safe-to-spend amount,
+    and the actions are worked out from that lower amount.
+    """
     as_of = forecast.as_of
     regular = find_regular_payments(history, as_of)
     due = upcoming_payments(regular, history, as_of, days=len(forecast.points))
     income = find_income_pattern(history, as_of)
     income_day = next_income_day(income, history, as_of)
     plan = plan_safe_to_spend(forecast, regular, due, income_day)
+    savings = None
+    if goal is not None:
+        problem = problem_with(goal, as_of)
+        if problem:
+            raise InvalidGoalError(problem)
+        aside = set_aside(goal, as_of, plan.window_days)
+        savings = SavingsPlan(goal, round(per_day(goal, as_of), 2), round(aside, 2), plan.amount)
+        plan = plan_safe_to_spend(forecast, regular, due, income_day, savings=aside)
     cushion = safety_cushion(forecast)
     return Assessment(
         forecast=forecast,
@@ -67,6 +86,8 @@ def assess(forecast: Forecast, history: list[Transaction]) -> Assessment:
         regular_payments=regular,
         due_payments=due,
         actions=suggest_actions(forecast, plan, regular, due, history, income_day),
+        usual_spending=round(everyday_spending_per_day(history, regular, as_of), 2),
+        savings=savings,
     )
 
 
@@ -96,10 +117,10 @@ class GetForecast:
         history = self._repository.get_transactions(user_id, as_of)
         return user, self._forecaster.forecast(history, as_of), history
 
-    def execute(self, user_id: str, as_of: date) -> ForecastResult:
+    def execute(self, user_id: str, as_of: date, goal: SavingsGoal | None = None) -> ForecastResult:
         user, forecast, history = self.load(user_id, as_of)
         # What happened afterwards is only shown next to the forecast. It never reaches the forecaster.
         through = forecast.points[-1].day
         later = self._repository.get_transactions(user_id, through)[len(history):]
-        return ForecastResult(user, assess(forecast, history),
+        return ForecastResult(user, assess(forecast, history, goal),
                               actual_balances(later, forecast, self._repository.last_day()))

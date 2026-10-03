@@ -26,6 +26,7 @@ from app.infrastructure.ml.features import MIN_HISTORY_DAYS
 from app.infrastructure.ml.quantile_forecaster import QuantileForecaster
 from app.infrastructure.repositories.csv_transaction_repository import CsvTransactionRepository
 from app.infrastructure.repositories.json_metrics_store import JsonMetricsStore
+from app.infrastructure.synthetic.impact import IMPACT_FILE
 from app.presentation.api.errors import register_error_handlers
 from app.presentation.api.routers import explain, forecast, health, metrics, users, what_if
 
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     app.state.run_what_if = RunWhatIf(app.state.get_forecast)
     app.state.explain_alert = ExplainAlert(app.state.get_forecast, make_explainer())
     app.state.get_metrics = GetMetrics(JsonMetricsStore(settings.report_dir))
+    app.state.get_impact = GetMetrics(JsonMetricsStore(settings.report_dir, IMPACT_FILE, "scripts.impact_test"))
     app.state.meta = {
         "first_day": repository.first_day() + timedelta(days=MIN_HISTORY_DAYS),
         "last_day": repository.last_day(),

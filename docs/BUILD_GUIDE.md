@@ -93,7 +93,7 @@ Tick a step when its test passes and it is committed.
 
 **H. Finish:**
 
-- [ ] 27. Extras (optional)
+- [x] 27. Extras (optional): four of the five; voice input was left out
 - [ ] 28. README
 - [ ] 29. Clean clone test
 - [ ] 30. Report and video
@@ -904,17 +904,24 @@ Compare the numbers on the screen with `backend/reports/metrics.json`.
 
 Only before the feature freeze, and only when steps 1 to 26 are done. Each one is built, tested and committed like any other step. In order of value:
 
-1. "What actually happened": for a past "today", draw the real balance over the forecast (FR-25). The API already returns `actual` for each point.
-2. Follow-up question box (FR-19), if not done in step 25.
-3. Impact test (SRS section 5.6).
-4. Savings goal (FR-26).
-5. Voice input in Bangla (FR-20).
+1. "What actually happened": for a past "today", draw the real balance over the forecast (FR-25). **Done in step 23:** the tick box on the Forecast screen.
+2. Follow-up question box (FR-19). **Done in step 25.**
+3. Impact test (SRS section 5.6). **Done.** `python -m scripts.impact_test` simulates the same 300 customers with and without the advice and writes `reports/impact.json`. The Model screen shows it, and `GET /impact` serves it. The code is in `app/infrastructure/synthetic/impact.py`.
+4. Savings goal (FR-26). **Done.** A card on Home takes an amount and a date. The API takes the goal with the forecast, what-if and explain calls (`goal_amount`, `goal_date`) and lowers the safe-to-spend amount. The rule is in `app/domain/services/savings_goal.py`.
+5. Voice input in Bangla (FR-20). Not done.
+
+Two things were added that are not on this list:
+
+- **Bangla mode.** A switch in the header turns the whole web app into Bangla, with Bangla digits and dates. Every sentence is in `frontend/src/presentation/text/en.js` and `bn.js`, under the same names. Read the Bangla file and fix anything that sounds unnatural.
+- **Simpler wording.** The Home screen says things in plainer words, shows what the customer usually spends next to the safe amount, and tells a customer with no warning when their payments are still more than the money expected.
+
+What the impact test found, for customers who kept to the safe amount on warned days: borrowing fell from ৳1,049 to ৳426 per customer, days with under a quarter of the day's need met fell from 6.3% to 4.1%, days with under half did not change (7.4% against 7.3%), and they spent 89.7% of what they wanted against 93.5%. Report all four, not only the good ones.
 
 ### Step 28. README
 
 **Build:**
 
-`README.md` in the project root with all ten items the rulebook requires:
+`README.md` is written, with all ten items the rulebook requires. Two lines still say `ADD-THE-LIVE-ADDRESS-HERE` and `ADD-THE-API-ADDRESS-HERE`: fill them in after the deploy, then tick this step.
 
 - [ ] Project overview: the problem, the solution, the purpose
 - [ ] Features, and how the AI parts are used

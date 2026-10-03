@@ -1582,3 +1582,90 @@ a {
 .chart-caption + .chart {
   margin-top: 2px;
 }
+
+/* ---------- language switch in the header ---------- */
+
+.top .segmented button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.86rem;
+}
+
+.foot .tag {
+  margin-left: auto;
+}
+
+/* ---------- savings goal ---------- */
+
+.goal-plan {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.goal-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 12px;
+  margin-top: 8px;
+}
+
+.goal-form input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.goal-form input[type="number"] {
+  width: 128px;
+}
+
+/* ---------- impact table ---------- */
+
+.table td small {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.prose-heading.spaced {
+  margin-top: 14px;
+}
+
+/* ---------- Bangla ---------- */
+
+/* The small capital-letter labels use a typewriter face with wide letter spacing. Bangla has no
+   capitals, and spacing its letters apart breaks joined letters, so in Bangla they use the body face. */
+:root[lang="bn"] :is(.label, .card-title, .status-eyebrow, .tag, .foot, .reason, .answer-source, .compare thead :is(th, td), .table .chosen small) {
+  font-family: var(--body);
+  letter-spacing: 0;
+}
+
+:root[lang="bn"] :is(.label, .card-title, .status-eyebrow) {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+:root[lang="bn"] :is(.foot, .tag, .compare thead :is(th, td)) {
+  font-size: 0.8rem;
+}
+
+:root[lang="bn"] .tab {
+  font-size: 0.76rem;
+}
+
+@media (min-width: 720px) {
+  :root[lang="bn"] .tab {
+    font-size: 0.98rem;
+  }
+}
+
+.day.rounded {
+  border-radius: 10px;
+}

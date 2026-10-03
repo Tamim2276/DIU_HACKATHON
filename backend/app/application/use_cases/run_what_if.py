@@ -6,6 +6,7 @@ from app.application.use_cases.get_forecast import ForecastResult, GetForecast
 from app.domain.entities.action import Action
 from app.domain.entities.alert import Alert
 from app.domain.services.actions import apply_actions
+from app.domain.services.savings_goal import SavingsGoal
 from app.domain.services.shortfall import find_shortfall
 
 
@@ -24,8 +25,9 @@ class RunWhatIf:
     def __init__(self, get_forecast: GetForecast):
         self._get_forecast = get_forecast
 
-    def execute(self, user_id: str, as_of: date, action_ids: list[str]) -> WhatIfResult:
-        base = self._get_forecast.execute(user_id, as_of)
+    def execute(self, user_id: str, as_of: date, action_ids: list[str],
+                goal: SavingsGoal | None = None) -> WhatIfResult:
+        base = self._get_forecast.execute(user_id, as_of, goal)
         available = {action.id: action for action in base.assessment.actions}
         unknown = [action_id for action_id in action_ids if action_id not in available]
         if unknown:

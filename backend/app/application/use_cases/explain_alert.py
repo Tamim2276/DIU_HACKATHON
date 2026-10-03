@@ -27,6 +27,7 @@ from app.domain.entities.transaction import Transaction
 from app.domain.entities.user import User
 from app.domain.services.actions import apply_actions, everyday_spending_per_day
 from app.domain.services.income_pattern import DAILY, MONTHLY
+from app.domain.services.savings_goal import SavingsGoal
 from app.domain.services.shortfall import WARNING_DAYS, find_shortfall
 
 NOTICEABLE_DROP = 0.02  # an action "lowers the chance" when the chance falls by at least this much
@@ -132,12 +133,13 @@ class ExplainAlert:
         self._get_forecast = get_forecast
         self._explainer = explainer
 
-    def execute(self, user_id: str, as_of: date, language: str, question: str | None = None) -> Explanation:
+    def execute(self, user_id: str, as_of: date, language: str, question: str | None = None,
+                goal: SavingsGoal | None = None) -> Explanation:
         """The standard explanation, or with a `question` the answer to it. Both rest on the same facts."""
         if language not in LANGUAGES:
             raise UnknownLanguageError(f"choose a language from: {', '.join(LANGUAGES)}")
         question = (question or "").strip() or None
         user, forecast, history = self._get_forecast.load(user_id, as_of)
-        facts = gather_facts(assess(forecast, history), history)
+        facts = gather_facts(assess(forecast, history, goal), history)
         reply = self._explainer.explain(facts, language, question)
         return Explanation(user, language, reply.text, facts, reply.source, question)

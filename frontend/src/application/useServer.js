@@ -5,7 +5,7 @@ import { api, apiUrl } from "../infrastructure/apiClient.js";
 const RETRY_EVERY_MS = 3000;
 // A free host puts the API to sleep when nobody visits. Waking it takes about a minute,
 // so the app keeps trying for longer than that before it calls it a failure.
-const GIVE_UP_AFTER_MS = 90000;
+const GIVE_UP_AFTER_MS = 150000;
 
 export const CONNECTING = "connecting";
 export const READY = "ready";

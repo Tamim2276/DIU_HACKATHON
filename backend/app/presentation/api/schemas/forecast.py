@@ -1,11 +1,12 @@
 """Shape of the forecast response, and how a use-case result is turned into it."""
 import datetime as dt
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app.application.use_cases.get_forecast import Assessment, ForecastResult
+from app.application.use_cases.get_forecast import Assessment, ForecastResult, InvalidGoalError
 from app.application.use_cases.run_what_if import WhatIfResult
 from app.domain.entities.user import User
+from app.domain.services.savings_goal import SavingsGoal
 
 
 class PointOut(BaseModel):
@@ -34,8 +35,9 @@ class DuePaymentOut(BaseModel):
 
 class ActionOut(BaseModel):
     id: str
-    title: str
+    title: str  # one plain sentence in English
     effect: float  # taka it adds on the forecast's tightest day
+    details: dict  # the figures behind the title, for writing it in another language
 
 
 class IncomeOut(BaseModel):
@@ -55,6 +57,23 @@ class SafeToSpendPartsOut(BaseModel):
     left_over: float
 
 
+class SavingsGoalOut(BaseModel):
+    amount: float
+    date: dt.date
+    per_day: float  # taka to put aside each day to reach the goal on time
+    set_aside: float  # taka the goal takes out of the safe-to-spend period
+    safe_to_spend_before: float  # safe to spend per day without the goal
+
+
+def goal_from(amount: float | None, day: dt.date | None) -> SavingsGoal | None:
+    """The savings goal in a request: an amount and a date together, or neither."""
+    if amount is None and day is None:
+        return None
+    if amount is None or day is None:
+        raise InvalidGoalError("a savings goal needs both an amount and a date")
+    return SavingsGoal(amount, day)
+
+
 class ForecastOut(BaseModel):
     user_id: str
     persona: str
@@ -68,6 +87,8 @@ class ForecastOut(BaseModel):
     window_days: int
     window_until: dt.date
     safe_to_spend_parts: SafeToSpendPartsOut
+    usual_everyday_spending: float  # taka per day over the last 30 days
+    savings_goal: SavingsGoalOut | None  # the goal sent with the request, if any
     income: IncomeOut
     alert: AlertOut | None
     points: list[PointOut]
@@ -77,6 +98,7 @@ class ForecastOut(BaseModel):
 
 def forecast_out(user: User, assessment: Assessment, actual: dict[dt.date, float]) -> ForecastOut:
     forecast, plan, alert, income = assessment.forecast, assessment.safe_to_spend, assessment.alert, assessment.income
+    savings = assessment.savings
     return ForecastOut(
         user_id=user.user_id,
         persona=user.persona,
@@ -92,6 +114,10 @@ def forecast_out(user: User, assessment: Assessment, actual: dict[dt.date, float
         safe_to_spend_parts=SafeToSpendPartsOut(
             balance=plan.balance, cautious_income=plan.cautious_income, payments_due=plan.payments_due,
             cushion=plan.cushion, savings=plan.savings, left_over=round(plan.left_over, 2)),
+        usual_everyday_spending=assessment.usual_spending,
+        savings_goal=None if savings is None else SavingsGoalOut(
+            amount=savings.goal.amount, date=savings.goal.by, per_day=savings.per_day, set_aside=savings.set_aside,
+            safe_to_spend_before=savings.safe_before),
         income=IncomeOut(kind=income.kind, usual_day=income.usual_day, usual_amount=income.usual_amount,
                          next_day=assessment.next_income_day),
         alert=None if alert is None else AlertOut(date=alert.day, probability=alert.chance, gap=alert.gap,
@@ -100,7 +126,7 @@ def forecast_out(user: User, assessment: Assessment, actual: dict[dt.date, float
                 for p in forecast.points],
         regular_payments=[DuePaymentOut(recipient=d.recipient, label=d.label, date=d.due, amount=d.amount)
                           for d in assessment.due_payments],
-        actions=[ActionOut(id=a.id, title=a.title, effect=a.effect) for a in assessment.actions],
+        actions=[ActionOut(id=a.id, title=a.title, effect=a.effect, details=a.details) for a in assessment.actions],
     )
 
 
@@ -111,6 +137,8 @@ def result_out(result: ForecastResult) -> ForecastOut:
 class WhatIfIn(BaseModel):
     as_of: dt.date | None = None  # the day to treat as today; the demo day when left out
     actions: list[str] = []  # ids of suggested actions to switch on
+    goal_amount: float | None = Field(None, gt=0)  # a savings goal, sent with its date
+    goal_date: dt.date | None = None
 
     # What the docs page pre-fills, so "Try it out" works without editing. Use it with user U0121.
     model_config = {"json_schema_extra": {"examples": [{"as_of": "2026-08-12", "actions": ["keep_to_safe_spend"]}]}}

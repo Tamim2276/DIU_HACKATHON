@@ -1,4 +1,6 @@
 """The API, called the way the web app will call it, against the real data and model."""
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -43,7 +45,9 @@ def test_forecast_has_the_agreed_shape(client):
     body = client.get(FORECAST.format("U0121"), params={"as_of": "2026-08-12"}).json()
     assert set(body) == {"user_id", "persona", "persona_label", "as_of", "balance", "typical_daily_spending", "cushion",
                          "under_cushion_now", "safe_to_spend", "window_days", "window_until", "safe_to_spend_parts",
-                         "income", "alert", "points", "regular_payments", "actions"}
+                         "usual_everyday_spending", "savings_goal", "income", "alert", "points", "regular_payments",
+                         "actions"}
+    assert body["savings_goal"] is None and body["usual_everyday_spending"] == 638.96
     assert body["user_id"] == "U0121" and body["as_of"] == "2026-08-12" and body["persona"] == "student"
     assert len(body["points"]) == 30 and body["points"][0]["date"] == "2026-08-13"
     for point in body["points"]:
@@ -60,8 +64,11 @@ def test_a_user_at_risk_gets_an_alert_and_actions(client):
     assert set(body["alert"]) == {"date", "probability", "gap", "cushion"}
     assert body["alert"]["date"] == "2026-08-23" and body["alert"]["probability"] >= 0.40
     assert body["alert"]["cushion"] == body["cushion"]
-    assert body["actions"] and set(body["actions"][0]) == {"id", "title", "effect"}
+    assert body["actions"] and set(body["actions"][0]) == {"id", "title", "effect", "details"}
     assert body["actions"][0]["id"] == "keep_to_safe_spend" and "৳" in body["actions"][0]["title"]
+    # the figures behind the sentence, so the web app can write it in Bangla
+    assert body["actions"][0]["details"] == {"safe_per_day": 34.0, "usual_per_day": 638.96, "saving_per_day": 604.96,
+                                              "until": "2026-09-08"}
 
 
 def test_a_comfortable_user_gets_no_alert(client):
@@ -149,7 +156,8 @@ def test_what_if_for_an_unknown_user_is_404(client):
 
 def prefilled(schema: dict, path: str, method: str) -> dict:
     """What the docs page puts in each parameter box. It reads `example` there; a list of `examples` is ignored."""
-    return {p["name"]: p["schema"]["example"] for p in schema["paths"][path][method]["parameters"]}
+    return {p["name"]: p["schema"]["example"] for p in schema["paths"][path][method]["parameters"]
+            if "example" in p["schema"]}  # a box with no example, such as the savings goal, starts empty
 
 
 def test_the_example_the_docs_page_pre_fills_really_works(client):
@@ -291,6 +299,54 @@ def test_the_app_only_uses_a_model_when_a_key_is_set(monkeypatch):
     assert calls == [("a-key", ("model-a", "model-b"))]
 
 
+# ---------- savings goal ----------
+
+GOAL = {"goal_amount": 2000, "goal_date": "2026-09-08"}  # 2,000 taka by the next income day, 27 days away
+
+
+def test_a_savings_goal_lowers_the_safe_to_spend_amount(client):
+    plain = client.get(FORECAST.format("U0061"), params={"as_of": "2026-08-12"}).json()
+    saving = client.get(FORECAST.format("U0061"), params={"as_of": "2026-08-12", **GOAL}).json()
+    assert plain["safe_to_spend"] == 118.0 and saving["safe_to_spend"] == 44.0
+    # the whole goal falls inside the 27-day period: 2,000 less to spend, about 74 a day
+    assert saving["savings_goal"] == {"amount": 2000.0, "date": "2026-09-08", "per_day": 74.07, "set_aside": 2000.0,
+                                      "safe_to_spend_before": 118.0}
+    assert saving["safe_to_spend_parts"]["savings"] == 2000.0
+    assert saving["safe_to_spend_parts"]["left_over"] == round(plain["safe_to_spend_parts"]["left_over"] - 2000, 2)
+    # the forecast itself and the warning do not change
+    assert saving["points"] == plain["points"] and saving["alert"] == plain["alert"]
+
+
+def test_a_goal_further_away_takes_only_its_share_of_the_period(client):
+    far = client.get(FORECAST.format("U0061"), params={"as_of": "2026-08-12", "goal_amount": 2000,
+                                                       "goal_date": "2026-10-05"}).json()  # 54 days away
+    assert far["savings_goal"]["per_day"] == 37.04 and far["savings_goal"]["set_aside"] == 1000.0
+    assert 44.0 < far["safe_to_spend"] < 118.0
+
+
+def test_the_goal_reaches_the_actions_the_what_if_and_the_explanation(client):
+    forecast = client.get(FORECAST.format("U0061"), params={"as_of": "2026-08-12", **GOAL}).json()
+    keep = next(action for action in forecast["actions"] if action["id"] == "keep_to_safe_spend")
+    assert keep["details"]["safe_per_day"] == 44.0
+    what_if = client.post(WHAT_IF.format("U0061"), json={"as_of": "2026-08-12", "actions": ["keep_to_safe_spend"], **GOAL})
+    assert what_if.status_code == 200 and what_if.json()["safe_to_spend"] == 44.0
+    explained = client.post(EXPLAIN.format("U0061"), json={"as_of": "2026-08-12", "language": "en", **GOAL}).json()
+    assert explained["facts"]["safe_to_spend"] == 44.0 and "৳44" in explained["text"]
+
+
+@pytest.mark.parametrize("goal", [
+    {"goal_amount": 2000},  # no date
+    {"goal_date": "2026-09-08"},  # no amount
+    {"goal_amount": 0, "goal_date": "2026-09-08"},
+    {"goal_amount": 2000, "goal_date": "2026-08-12"},  # today is too late
+    {"goal_amount": 2000, "goal_date": "2028-01-01"},  # more than a year away
+])
+def test_a_goal_that_cannot_be_used_is_422_with_a_reason(client, goal):
+    response = client.get(FORECAST.format("U0061"), params={"as_of": "2026-08-12", **goal})
+    assert response.status_code == 422 and response.json()["detail"]
+    assert client.post(WHAT_IF.format("U0061"), json={"as_of": "2026-08-12", "actions": [], **goal}).status_code == 422
+
+
 # ---------- model report ----------
 
 def test_metrics_returns_the_saved_test_results(client):
@@ -300,3 +356,15 @@ def test_metrics_returns_the_saved_test_results(client):
     assert body == load_metrics(settings.report_dir)
     assert all(body["checks"].values())
     assert body["early_warning"]["alert_level_used_in_the_app"] == 0.4
+
+
+def test_impact_returns_the_saved_impact_results(client):
+    path = settings.report_dir / "impact.json"
+    response = client.get("/impact")
+    if not path.exists():  # the full impact test has not been run on this machine
+        assert response.status_code == 503 and "scripts.impact_test" in response.json()["detail"]
+        return
+    assert response.status_code == 200
+    body = response.json()
+    assert body == json.loads(path.read_text(encoding="utf-8"))
+    assert set(body["runs"]) == {"without", "when_warned", "every_day"}

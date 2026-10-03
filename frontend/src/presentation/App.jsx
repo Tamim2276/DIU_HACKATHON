@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 
 import { useForecast } from "../application/useForecast.js";
+import { useLanguage } from "../application/useLanguage.js";
 import { useSelection } from "../application/useSelection.js";
 import { CONNECTING, READY as CONNECTED, useServer } from "../application/useServer.js";
 import ConnectionNotice from "./components/ConnectionNotice.jsx";
 import TabBar from "./components/TabBar.jsx";
+import { LanguageProvider, useText } from "./language.jsx";
 import Actions from "./pages/Actions.jsx";
 import Ask from "./pages/Ask.jsx";
 import Forecast from "./pages/Forecast.jsx";
@@ -14,11 +16,17 @@ import ModelReport from "./pages/ModelReport.jsx";
 // The five screens. They are tabs inside one page, not separate addresses,
 // so a static host needs no extra rules to serve the app.
 const TABS = [
-  { id: "home", label: "Home", icon: "home" },
-  { id: "forecast", label: "Forecast", icon: "forecast" },
-  { id: "actions", label: "Actions", icon: "actions" },
-  { id: "ask", label: "Ask", icon: "ask" },
-  { id: "model", label: "Model", icon: "model" },
+  { id: "home", icon: "home" },
+  { id: "forecast", icon: "forecast" },
+  { id: "actions", icon: "actions" },
+  { id: "ask", icon: "ask" },
+  { id: "model", icon: "model" },
+];
+
+// Each language is named in its own script, whatever language the app is in.
+const LANGUAGES = [
+  { id: "bn", name: "বাংলা" },
+  { id: "en", name: "English" },
 ];
 
 // The part of the address after "#" remembers the tab, so reloading the page stays on the same screen.
@@ -29,11 +37,10 @@ function tabInAddress() {
 
 // Everything below the tabs once the API has answered. The chosen customer and day, and the
 // forecast for them, are held here so that every screen shows the same customer.
-function Screens({ server, tab, goTo }) {
+function Screens({ server, tabId, goTo }) {
   const { users, meta } = server;
   const [selection, choose] = useSelection(users, meta);
-  const forecastState = useForecast(selection.userId, selection.asOf);
-  const [language, setLanguage] = useState("bn"); // the Ask screen opens in Bangla
+  const forecastState = useForecast(selection.userId, selection.asOf, selection.goal);
 
   // The actions switched on, for this customer and day only: another customer starts with none.
   const view = `${selection.userId}|${selection.asOf}`;
@@ -43,7 +50,7 @@ function Screens({ server, tab, goTo }) {
     setSwitched({ view, ids: actionIds.includes(id) ? actionIds.filter((other) => other !== id) : [...actionIds, id] });
 
   const shared = { users, meta, selection, forecastState, goTo };
-  switch (tab.id) {
+  switch (tabId) {
     case "home":
       return <Home {...shared} onChoose={choose} />;
     case "forecast":
@@ -51,18 +58,20 @@ function Screens({ server, tab, goTo }) {
     case "actions":
       return <Actions {...shared} actionIds={actionIds} onToggle={toggleAction} />;
     case "ask":
-      return <Ask users={users} selection={selection} language={language} onLanguage={setLanguage} goTo={goTo} />;
+      return <Ask users={users} selection={selection} goTo={goTo} />;
     default:
       return <ModelReport meta={meta} />;
   }
 }
 
 function StatusLine({ server }) {
+  const { t, f } = useText();
   if (server.status === CONNECTED) {
     return (
       <>
         <span className="dot ok" aria-hidden="true" />
-        API connected · {server.users.length} users
+        {t.frame.connected(f.number(server.users.length))}
+        {server.meta.data === "synthetic" && <span className="tag">{t.frame.synthetic}</span>}
       </>
     );
   }
@@ -70,12 +79,13 @@ function StatusLine({ server }) {
   return (
     <>
       <span className={connecting ? "dot wait" : "dot bad"} aria-hidden="true" />
-      {connecting ? "Connecting to the API" : "API not reachable"}
+      {connecting ? t.frame.connecting : t.frame.unreachable}
     </>
   );
 }
 
-export default function App() {
+function Frame({ language, onLanguage }) {
+  const { t } = useText();
   const server = useServer();
   const [tabId, setTabId] = useState(tabInAddress);
 
@@ -91,7 +101,7 @@ export default function App() {
     window.scrollTo({ top: 0 });
   }
 
-  const tab = TABS.find((candidate) => candidate.id === tabId);
+  const tabs = TABS.map((tab) => ({ ...tab, label: t.frame.tabs[tab.id] }));
 
   return (
     <div className="app">
@@ -101,16 +111,28 @@ export default function App() {
             আগাম
           </span>
           <span className="brand-en">Agam</span>
-          <span className="tagline">See a shortfall before it happens</span>
+          <span className="tagline">{t.frame.tagline}</span>
         </div>
-        {server.meta?.data === "synthetic" && <span className="tag">Synthetic data</span>}
+        <div className="segmented" role="group" aria-label={t.frame.language}>
+          {LANGUAGES.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              lang={option.id}
+              aria-pressed={language === option.id}
+              onClick={() => onLanguage(option.id)}
+            >
+              {option.name}
+            </button>
+          ))}
+        </div>
       </header>
 
-      <TabBar tabs={TABS} current={tabId} onChoose={goTo} />
+      <TabBar tabs={tabs} current={tabId} onChoose={goTo} label={t.frame.screens} />
 
-      <main id="panel" className="panel" role="tabpanel" aria-labelledby={`tab-${tab.id}`}>
+      <main id="panel" className="panel" role="tabpanel" aria-labelledby={`tab-${tabId}`}>
         {server.status === CONNECTED ? (
-          <Screens server={server} tab={tab} goTo={goTo} />
+          <Screens server={server} tabId={tabId} goTo={goTo} />
         ) : (
           <ConnectionNotice server={server} />
         )}
@@ -120,5 +142,14 @@ export default function App() {
         <StatusLine server={server} />
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  const [language, setLanguage] = useLanguage();
+  return (
+    <LanguageProvider value={language}>
+      <Frame language={language} onLanguage={setLanguage} />
+    </LanguageProvider>
   );
 }
