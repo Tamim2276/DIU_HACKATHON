@@ -61,7 +61,7 @@ Tick a step when its test passes and it is committed.
 - [x] 7. Daily panel, features and baselines
 - [x] 8. Train the model
 - [x] 9. Test the model against the baselines
-- [ ] 10. Forecaster the app can call
+- [x] 10. Forecaster the app can call
 
 **D. Rules:**
 
