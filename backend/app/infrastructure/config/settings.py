@@ -32,5 +32,8 @@ class Settings:
     # Every fifth user is kept out of training, to test on users the model never saw.
     holdout_every: int = 5
 
+    # The "today" the app opens on: inside the test period, with 30 real days after it to compare with.
+    demo_today: date = date(2026, 8, 12)
+
 
 settings = Settings()

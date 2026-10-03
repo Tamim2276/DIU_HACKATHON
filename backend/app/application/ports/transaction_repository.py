@@ -20,6 +20,14 @@ class TransactionRepository(ABC):
         """Raises UserNotFoundError for an unknown id."""
 
     @abstractmethod
+    def first_day(self) -> date:
+        """The first day the data covers."""
+
+    @abstractmethod
+    def last_day(self) -> date:
+        """The last day the data covers."""
+
+    @abstractmethod
     def get_transactions(self, user_id: str, up_to: date) -> list[Transaction]:
         """The user's transactions dated on or before `up_to`, oldest first.
 

@@ -72,7 +72,7 @@ Tick a step when its test passes and it is committed.
 
 **E. API:**
 
-- [ ] 15. First endpoints: health, users, forecast
+- [x] 15. First endpoints: health, users, forecast
 - [ ] 16. Deploy the API
 - [ ] 17. What-if and model report endpoints
 
@@ -510,26 +510,41 @@ The forecast call returns this shape. Part G depends on it, so change both sides
 
 ```json
 {
-  "user_id": "U0001",
+  "user_id": "U0121",
+  "persona": "student",
+  "persona_label": "University student",
   "as_of": "2026-08-12",
-  "balance": 5200,
-  "cushion": 780,
-  "safe_to_spend": 330,
-  "window_days": 18,
-  "alert": { "date": "2026-08-24", "gap": 650, "probability": 0.78 },
+  "balance": 1771.4,
+  "typical_daily_spending": 744.6,
+  "cushion": 744.6,
+  "under_cushion_now": false,
+  "safe_to_spend": 34.0,
+  "window_days": 27,
+  "window_until": "2026-09-08",
+  "safe_to_spend_parts": {
+    "balance": 1771.4, "cautious_income": 4403.0, "payments_due": 4510.0,
+    "cushion": 744.6, "savings": 0.0, "left_over": 919.8
+  },
+  "income": { "kind": "monthly", "usual_day": 8, "usual_amount": 13360.0, "next_day": "2026-09-08" },
+  "alert": { "date": "2026-08-23", "probability": 0.4454, "gap": 678.66, "cushion": 744.6 },
   "points": [
-    { "date": "2026-08-13", "p10": 4400, "p50": 4700, "p90": 5000, "actual": null }
+    { "date": "2026-08-13", "p10": 207.67, "p25": 921.28, "p50": 1994.87, "p75": 3626.85, "p90": 5427.11, "actual": 895.4 }
   ],
   "regular_payments": [
-    { "recipient": "W-123456", "date": "2026-08-20", "amount": 5000 }
+    { "recipient": "W-123456", "label": "mess_rent", "date": "2026-09-07", "amount": 4000.0 }
   ],
   "actions": [
-    { "id": "keep_to_safe_spend", "title": "Keep daily spending to ৳330", "effect": 2700 }
+    { "id": "keep_to_safe_spend", "title": "Keep everyday spending to ৳34 a day until 8 Sep. You usually spend about ৳639.", "effect": 10889.34 }
   ]
 }
 ```
 
-The numbers above are examples. `alert` is `null` when there is no shortfall risk. `points` has 30 items. `actual` is the real balance on that day when the data has it, and `null` otherwise.
+- `alert` is `null` when the risk stays under the alert level.
+- `under_cushion_now` is `true` when the balance is already under the cushion today, whether or not there is an alert.
+- `points` has 30 items. `actual` is the real balance on that day when the data has it, and `null` otherwise.
+- `income.kind` is `monthly`, `daily` or `irregular`. `usual_day`, `usual_amount` and `next_day` are `null` unless it is monthly.
+- `regular_payments` lists the payments due in the next 30 days.
+- `GET /meta` gives the days a forecast can be asked for and the day the app opens on.
 
 **Test:**
 
@@ -541,10 +556,11 @@ uvicorn app.main:app --reload
 Then open <http://127.0.0.1:8000/docs> and try:
 
 - `GET /health` returns `{"status": "ok"}`.
+- `GET /meta` returns the first and last day and the default day.
 - `GET /users` returns the users with their persona.
-- `GET /users/U0001/forecast?as_of=2026-08-12` returns 30 points, a safe-to-spend number, and an alert or `null`.
+- `GET /users/U0121/forecast?as_of=2026-08-12` returns 30 points, a safe-to-spend number, and an alert.
 
-**Done when:** all tests pass and the three calls work in the browser.
+**Done when:** all tests pass and the four calls work in the browser.
 
 **Commit:** `Add health, users and forecast endpoints`
 

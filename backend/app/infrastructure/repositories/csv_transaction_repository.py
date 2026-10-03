@@ -19,9 +19,17 @@ class CsvTransactionRepository(TransactionRepository):
         frame = pd.read_csv(data_dir / "transactions.csv.gz", parse_dates=["timestamp"], dtype=REPEATED)
         frame = frame.sort_values(["user_id", "timestamp"], kind="stable")
         self._by_user = {user_id: rows for user_id, rows in frame.groupby("user_id", sort=False)}
+        self._first_day = frame["timestamp"].min().date()
+        self._last_day = frame["timestamp"].max().date()
 
     def list_users(self) -> list[User]:
         return list(self._users.values())
+
+    def first_day(self) -> date:
+        return self._first_day
+
+    def last_day(self) -> date:
+        return self._last_day
 
     def get_user(self, user_id: str) -> User:
         try:
