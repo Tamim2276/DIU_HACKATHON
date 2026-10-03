@@ -83,7 +83,7 @@ Tick a step when its test passes and it is committed.
 
 **G. Web app:**
 
-- [ ] 20. App skeleton connected to the API
+- [x] 20. App skeleton connected to the API
 - [ ] 21. Home screen
 - [ ] 22. Deploy the web app
 - [ ] 23. Forecast screen
@@ -741,8 +741,14 @@ The screens are tabs inside one page. Do not use a URL router. A static host the
 
 - `frontend/package.json`, `vite.config.js`, `index.html`, `src/main.jsx`: a React app built with Vite. Packages: `react`, `react-dom`, `recharts`, and for development `vite` and `@vitejs/plugin-react`.
 - `src/infrastructure/apiClient.js`: all calls to the API, in one file. The address comes from `VITE_API_URL`.
-- `src/presentation/App.jsx` and `styles.css`: the page frame with the five tabs, empty for now.
+- `src/application/useServer.js`: reaches the API when the app opens and loads the users and the days a forecast can be asked for. It keeps trying for 90 seconds, because a free host needs about a minute to wake up.
+- `src/presentation/App.jsx` and `styles.css`: the page frame with the five tabs, empty for now. `components/TabBar.jsx` and `ConnectionNotice.jsx`.
 - `frontend/.env.example`: `VITE_API_URL=http://127.0.0.1:8000`. Copy it to `frontend/.env.local`.
+- `package-lock.json` is committed, so the host installs the same package versions.
+
+The layers are the same as in the backend: `presentation` shows things, `application` holds the hooks that load data, `infrastructure` talks to the API. A screen never builds a request itself.
+
+Open the app at `http://localhost:5173`, not `http://127.0.0.1:5173`. The API only accepts browser calls from the addresses in `ALLOWED_ORIGINS`, and the two spellings count as different addresses.
 
 **Test:**
 
@@ -764,8 +770,9 @@ Open <http://localhost:5173>.
 
 **Done when:**
 
-- The page shows "API connected" and the number of users.
-- When you stop the backend and reload, the page shows a clear "starting the server" or error message, not a blank screen.
+- The bottom of the page shows "API connected · 300 users".
+- The five tabs switch, and reloading the page stays on the same tab.
+- When you stop the backend and reload, the page shows "Starting the server", not a blank screen. Start the backend again and the page connects by itself within a few seconds.
 
 **Commit:** `Add web app skeleton connected to the API`
 
