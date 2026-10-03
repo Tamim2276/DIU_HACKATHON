@@ -1,0 +1,301 @@
+user_id,persona,persona_label
+U0001,rider,Ride-share rider
+U0002,rider,Ride-share rider
+U0003,rider,Ride-share rider
+U0004,rider,Ride-share rider
+U0005,rider,Ride-share rider
+U0006,rider,Ride-share rider
+U0007,rider,Ride-share rider
+U0008,rider,Ride-share rider
+U0009,rider,Ride-share rider
+U0010,rider,Ride-share rider
+U0011,rider,Ride-share rider
+U0012,rider,Ride-share rider
+U0013,rider,Ride-share rider
+U0014,rider,Ride-share rider
+U0015,rider,Ride-share rider
+U0016,rider,Ride-share rider
+U0017,rider,Ride-share rider
+U0018,rider,Ride-share rider
+U0019,rider,Ride-share rider
+U0020,rider,Ride-share rider
+U0021,rider,Ride-share rider
+U0022,rider,Ride-share rider
+U0023,rider,Ride-share rider
+U0024,rider,Ride-share rider
+U0025,rider,Ride-share rider
+U0026,rider,Ride-share rider
+U0027,rider,Ride-share rider
+U0028,rider,Ride-share rider
+U0029,rider,Ride-share rider
+U0030,rider,Ride-share rider
+U0031,rider,Ride-share rider
+U0032,rider,Ride-share rider
+U0033,rider,Ride-share rider
+U0034,rider,Ride-share rider
+U0035,rider,Ride-share rider
+U0036,rider,Ride-share rider
+U0037,rider,Ride-share rider
+U0038,rider,Ride-share rider
+U0039,rider,Ride-share rider
+U0040,rider,Ride-share rider
+U0041,rider,Ride-share rider
+U0042,rider,Ride-share rider
+U0043,rider,Ride-share rider
+U0044,rider,Ride-share rider
+U0045,rider,Ride-share rider
+U0046,rider,Ride-share rider
+U0047,rider,Ride-share rider
+U0048,rider,Ride-share rider
+U0049,rider,Ride-share rider
+U0050,rider,Ride-share rider
+U0051,rider,Ride-share rider
+U0052,rider,Ride-share rider
+U0053,rider,Ride-share rider
+U0054,rider,Ride-share rider
+U0055,rider,Ride-share rider
+U0056,rider,Ride-share rider
+U0057,rider,Ride-share rider
+U0058,rider,Ride-share rider
+U0059,rider,Ride-share rider
+U0060,rider,Ride-share rider
+U0061,garment,Garment worker
+U0062,garment,Garment worker
+U0063,garment,Garment worker
+U0064,garment,Garment worker
+U0065,garment,Garment worker
+U0066,garment,Garment worker
+U0067,garment,Garment worker
+U0068,garment,Garment worker
+U0069,garment,Garment worker
+U0070,garment,Garment worker
+U0071,garment,Garment worker
+U0072,garment,Garment worker
+U0073,garment,Garment worker
+U0074,garment,Garment worker
+U0075,garment,Garment worker
+U0076,garment,Garment worker
+U0077,garment,Garment worker
+U0078,garment,Garment worker
+U0079,garment,Garment worker
+U0080,garment,Garment worker
+U0081,garment,Garment worker
+U0082,garment,Garment worker
+U0083,garment,Garment worker
+U0084,garment,Garment worker
+U0085,garment,Garment worker
+U0086,garment,Garment worker
+U0087,garment,Garment worker
+U0088,garment,Garment worker
+U0089,garment,Garment worker
+U0090,garment,Garment worker
+U0091,garment,Garment worker
+U0092,garment,Garment worker
+U0093,garment,Garment worker
+U0094,garment,Garment worker
+U0095,garment,Garment worker
+U0096,garment,Garment worker
+U0097,garment,Garment worker
+U0098,garment,Garment worker
+U0099,garment,Garment worker
+U0100,garment,Garment worker
+U0101,garment,Garment worker
+U0102,garment,Garment worker
+U0103,garment,Garment worker
+U0104,garment,Garment worker
+U0105,garment,Garment worker
+U0106,garment,Garment worker
+U0107,garment,Garment worker
+U0108,garment,Garment worker
+U0109,garment,Garment worker
+U0110,garment,Garment worker
+U0111,garment,Garment worker
+U0112,garment,Garment worker
+U0113,garment,Garment worker
+U0114,garment,Garment worker
+U0115,garment,Garment worker
+U0116,garment,Garment worker
+U0117,garment,Garment worker
+U0118,garment,Garment worker
+U0119,garment,Garment worker
+U0120,garment,Garment worker
+U0121,student,University student
+U0122,student,University student
+U0123,student,University student
+U0124,student,University student
+U0125,student,University student
+U0126,student,University student
+U0127,student,University student
+U0128,student,University student
+U0129,student,University student
+U0130,student,University student
+U0131,student,University student
+U0132,student,University student
+U0133,student,University student
+U0134,student,University student
+U0135,student,University student
+U0136,student,University student
+U0137,student,University student
+U0138,student,University student
+U0139,student,University student
+U0140,student,University student
+U0141,student,University student
+U0142,student,University student
+U0143,student,University student
+U0144,student,University student
+U0145,student,University student
+U0146,student,University student
+U0147,student,University student
+U0148,student,University student
+U0149,student,University student
+U0150,student,University student
+U0151,student,University student
+U0152,student,University student
+U0153,student,University student
+U0154,student,University student
+U0155,student,University student
+U0156,student,University student
+U0157,student,University student
+U0158,student,University student
+U0159,student,University student
+U0160,student,University student
+U0161,student,University student
+U0162,student,University student
+U0163,student,University student
+U0164,student,University student
+U0165,student,University student
+U0166,student,University student
+U0167,student,University student
+U0168,student,University student
+U0169,student,University student
+U0170,student,University student
+U0171,student,University student
+U0172,student,University student
+U0173,student,University student
+U0174,student,University student
+U0175,student,University student
+U0176,student,University student
+U0177,student,University student
+U0178,student,University student
+U0179,student,University student
+U0180,student,University student
+U0181,shopkeeper,Small shop owner
+U0182,shopkeeper,Small shop owner
+U0183,shopkeeper,Small shop owner
+U0184,shopkeeper,Small shop owner
+U0185,shopkeeper,Small shop owner
+U0186,shopkeeper,Small shop owner
+U0187,shopkeeper,Small shop owner
+U0188,shopkeeper,Small shop owner
+U0189,shopkeeper,Small shop owner
+U0190,shopkeeper,Small shop owner
+U0191,shopkeeper,Small shop owner
+U0192,shopkeeper,Small shop owner
+U0193,shopkeeper,Small shop owner
+U0194,shopkeeper,Small shop owner
+U0195,shopkeeper,Small shop owner
+U0196,shopkeeper,Small shop owner
+U0197,shopkeeper,Small shop owner
+U0198,shopkeeper,Small shop owner
+U0199,shopkeeper,Small shop owner
+U0200,shopkeeper,Small shop owner
+U0201,shopkeeper,Small shop owner
+U0202,shopkeeper,Small shop owner
+U0203,shopkeeper,Small shop owner
+U0204,shopkeeper,Small shop owner
+U0205,shopkeeper,Small shop owner
+U0206,shopkeeper,Small shop owner
+U0207,shopkeeper,Small shop owner
+U0208,shopkeeper,Small shop owner
+U0209,shopkeeper,Small shop owner
+U0210,shopkeeper,Small shop owner
+U0211,shopkeeper,Small shop owner
+U0212,shopkeeper,Small shop owner
+U0213,shopkeeper,Small shop owner
+U0214,shopkeeper,Small shop owner
+U0215,shopkeeper,Small shop owner
+U0216,shopkeeper,Small shop owner
+U0217,shopkeeper,Small shop owner
+U0218,shopkeeper,Small shop owner
+U0219,shopkeeper,Small shop owner
+U0220,shopkeeper,Small shop owner
+U0221,shopkeeper,Small shop owner
+U0222,shopkeeper,Small shop owner
+U0223,shopkeeper,Small shop owner
+U0224,shopkeeper,Small shop owner
+U0225,shopkeeper,Small shop owner
+U0226,shopkeeper,Small shop owner
+U0227,shopkeeper,Small shop owner
+U0228,shopkeeper,Small shop owner
+U0229,shopkeeper,Small shop owner
+U0230,shopkeeper,Small shop owner
+U0231,shopkeeper,Small shop owner
+U0232,shopkeeper,Small shop owner
+U0233,shopkeeper,Small shop owner
+U0234,shopkeeper,Small shop owner
+U0235,shopkeeper,Small shop owner
+U0236,shopkeeper,Small shop owner
+U0237,shopkeeper,Small shop owner
+U0238,shopkeeper,Small shop owner
+U0239,shopkeeper,Small shop owner
+U0240,shopkeeper,Small shop owner
+U0241,freelancer,Freelancer
+U0242,freelancer,Freelancer
+U0243,freelancer,Freelancer
+U0244,freelancer,Freelancer
+U0245,freelancer,Freelancer
+U0246,freelancer,Freelancer
+U0247,freelancer,Freelancer
+U0248,freelancer,Freelancer
+U0249,freelancer,Freelancer
+U0250,freelancer,Freelancer
+U0251,freelancer,Freelancer
+U0252,freelancer,Freelancer
+U0253,freelancer,Freelancer
+U0254,freelancer,Freelancer
+U0255,freelancer,Freelancer
+U0256,freelancer,Freelancer
+U0257,freelancer,Freelancer
+U0258,freelancer,Freelancer
+U0259,freelancer,Freelancer
+U0260,freelancer,Freelancer
+U0261,freelancer,Freelancer
+U0262,freelancer,Freelancer
+U0263,freelancer,Freelancer
+U0264,freelancer,Freelancer
+U0265,freelancer,Freelancer
+U0266,freelancer,Freelancer
+U0267,freelancer,Freelancer
+U0268,freelancer,Freelancer
+U0269,freelancer,Freelancer
+U0270,freelancer,Freelancer
+U0271,freelancer,Freelancer
+U0272,freelancer,Freelancer
+U0273,freelancer,Freelancer
+U0274,freelancer,Freelancer
+U0275,freelancer,Freelancer
+U0276,freelancer,Freelancer
+U0277,freelancer,Freelancer
+U0278,freelancer,Freelancer
+U0279,freelancer,Freelancer
+U0280,freelancer,Freelancer
+U0281,freelancer,Freelancer
+U0282,freelancer,Freelancer
+U0283,freelancer,Freelancer
+U0284,freelancer,Freelancer
+U0285,freelancer,Freelancer
+U0286,freelancer,Freelancer
+U0287,freelancer,Freelancer
+U0288,freelancer,Freelancer
+U0289,freelancer,Freelancer
+U0290,freelancer,Freelancer
+U0291,freelancer,Freelancer
+U0292,freelancer,Freelancer
+U0293,freelancer,Freelancer
+U0294,freelancer,Freelancer
+U0295,freelancer,Freelancer
+U0296,freelancer,Freelancer
+U0297,freelancer,Freelancer
+U0298,freelancer,Freelancer
+U0299,freelancer,Freelancer
+U0300,freelancer,Freelancer
