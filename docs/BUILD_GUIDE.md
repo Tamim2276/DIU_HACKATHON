@@ -52,7 +52,7 @@ Tick a step when its test passes and it is committed.
 
 **B. Data:**
 
-- [ ] 4. Settings and first entities
+- [x] 4. Settings and first entities
 - [ ] 5. Synthetic data generator
 - [ ] 6. Reading the data
 
@@ -114,7 +114,15 @@ Tick a step when its test passes and it is committed.
 
 **Terminals.** Keep two open: one in `backend` with the virtual environment active, one in `frontend`.
 
-**Commands** are written for Windows PowerShell. On macOS or Linux, activate with `source .venv/bin/activate`.
+**Commands** work the same in Git Bash and PowerShell unless a step shows two versions. The main difference is how you activate the environment, from the `backend` folder:
+
+| Terminal | Activate with |
+| --- | --- |
+| Git Bash | `source .venv/Scripts/activate` |
+| PowerShell | `.\.venv\Scripts\Activate.ps1` |
+| macOS or Linux | `source .venv/bin/activate` |
+
+If `python` cannot find a package such as `fastapi`, the environment is not active.
 
 **Backend commands** always run from the `backend` folder with the environment active. The prompt then starts with `(.venv)`.
 
@@ -124,7 +132,7 @@ Tick a step when its test passes and it is committed.
 
 **Commit command** for every step:
 
-```powershell
+```bash
 git add -A
 git commit -m "the message given in the step"
 git push
@@ -138,7 +146,7 @@ git push
 
 **Test:**
 
-```powershell
+```bash
 uv --version
 node --version
 npm --version
@@ -181,7 +189,7 @@ No commit for this step.
 3. Add your teammate under Settings, Collaborators.
 4. In the project root:
 
-   ```powershell
+   ```bash
    git init -b main
    git add -A
    git commit -m "Add project structure and build guide"
@@ -191,7 +199,7 @@ No commit for this step.
 
 **Test:**
 
-```powershell
+```bash
 git status
 ```
 
@@ -203,6 +211,18 @@ The generated data and the trained model are committed in later steps on purpose
 
 **Build:**
 
+In Git Bash:
+
+```bash
+cd backend
+uv venv .venv --python 3.12
+source .venv/Scripts/activate
+uv pip install numpy pandas scikit-learn joblib fastapi "uvicorn[standard]" python-dotenv pytest httpx
+uv pip freeze > requirements.txt
+```
+
+In PowerShell, two lines differ:
+
 ```powershell
 cd backend
 uv venv .venv --python 3.12
@@ -211,17 +231,9 @@ uv pip install numpy pandas scikit-learn joblib fastapi "uvicorn[standard]" pyth
 uv pip freeze | Out-File -Encoding ascii requirements.txt
 ```
 
-Without `uv`, use Python 3.12 directly:
+Without `uv`, replace `uv venv .venv --python 3.12` with `py -3.12 -m venv .venv`, and `uv pip` with `python -m pip`.
 
-```powershell
-cd backend
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install numpy pandas scikit-learn joblib fastapi "uvicorn[standard]" python-dotenv pytest httpx
-python -m pip freeze | Out-File -Encoding ascii requirements.txt
-```
-
-If activation fails with "running scripts is disabled on this system", run this and activate again:
+In PowerShell, if activation fails with "running scripts is disabled on this system", run this and activate again:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -229,7 +241,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 **Test:**
 
-```powershell
+```bash
 python -c "import sklearn, pandas, fastapi; print('ok', sklearn.__version__, pandas.__version__, fastapi.__version__)"
 python --version
 ```
@@ -238,10 +250,10 @@ python --version
 
 Both of you must use the same Python version and the same `requirements.txt`. The saved model only loads reliably when the scikit-learn version matches. Your teammate sets up after cloning with:
 
-```powershell
+```bash
 cd backend
 uv venv .venv --python 3.12
-.\.venv\Scripts\Activate.ps1
+source .venv/Scripts/activate
 uv pip install -r requirements.txt
 ```
 
@@ -262,7 +274,7 @@ uv pip install -r requirements.txt
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest tests/unit -q
 ```
 
@@ -282,7 +294,7 @@ python -m pytest tests/unit -q
 
 **Test:**
 
-```powershell
+```bash
 python -m scripts.generate_data
 python -m pytest tests/integration/test_generator.py -q
 python -c "import pandas as pd; print(pd.read_csv('data/transactions.csv.gz').head(20))"
@@ -304,7 +316,7 @@ You should see about 300 users and roughly 200,000 to 250,000 transactions, gene
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest tests/integration/test_repository.py -q
 ```
 
@@ -327,7 +339,7 @@ python -m pytest tests/integration/test_repository.py -q
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest tests/integration/test_features.py -q
 ```
 
@@ -344,7 +356,7 @@ python -m pytest tests/integration/test_features.py -q
 
 **Test:**
 
-```powershell
+```bash
 python -m scripts.train_model
 ```
 
@@ -363,7 +375,7 @@ It prints the number of training rows, the time for each model and the size of t
 
 **Test:**
 
-```powershell
+```bash
 python -m scripts.evaluate_model
 ```
 
@@ -388,7 +400,7 @@ If the model loses to a baseline, spend at most one hour on the features and set
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest tests/integration/test_forecaster.py -q
 ```
 
@@ -412,7 +424,7 @@ These are pure functions in `domain`. They need no files, no model and no networ
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest tests/unit -q
 ```
 
@@ -432,7 +444,7 @@ python -m pytest tests/unit -q
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest -q
 ```
 
@@ -449,7 +461,7 @@ python -m pytest -q
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest tests/unit -q
 ```
 
@@ -471,7 +483,7 @@ python -m pytest tests/unit -q
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest tests/unit -q
 ```
 
@@ -521,7 +533,7 @@ The numbers above are examples. `alert` is `null` when there is no shortfall ris
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest -q
 uvicorn app.main:app --reload
 ```
@@ -583,7 +595,7 @@ Things to know:
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest -q
 uvicorn app.main:app --reload
 ```
@@ -612,7 +624,7 @@ In <http://127.0.0.1:8000/docs>:
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest -q
 uvicorn app.main:app --reload
 ```
@@ -638,7 +650,7 @@ Skip this step if you have no API key or are short of time. Step 18 already meet
 
 **Test:**
 
-```powershell
+```bash
 python -m pytest -q
 uvicorn app.main:app --reload
 ```
@@ -668,13 +680,13 @@ The screens are tabs inside one page. Do not use a URL router. A static host the
 
 Terminal 1, in `backend`:
 
-```powershell
+```bash
 uvicorn app.main:app --reload
 ```
 
 Terminal 2:
 
-```powershell
+```bash
 cd frontend
 npm install
 npm run dev
@@ -833,17 +845,19 @@ Judges will follow the README on their own machine. Do the same.
 
 **Test:**
 
-```powershell
-cd $env:TEMP
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git agam-check
+```bash
+cd "$TEMP"
+git clone https://github.com/Tamim2276/DIU_HACKATHON.git agam-check
 ```
+
+In PowerShell, use `cd $env:TEMP` for the first line, and `Select-String` in place of `grep` below.
 
 Then follow your README inside `agam-check`, and nothing else.
 
 Also run these inside `agam-check`:
 
-```powershell
-git ls-files | Select-String "\.env"
+```bash
+git ls-files | grep "\.env"
 git log --oneline
 ```
 
@@ -892,7 +906,9 @@ After 10:00 AM, push nothing until the on-site session starts on 7 October. The 
 | Problem | Likely cause |
 | --- | --- |
 | `No module named app` | You are not in the `backend` folder, or you ran a file directly. Use `python -m ...` from `backend`. |
-| `Activate.ps1 cannot be loaded` | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, then activate again. |
+| `No module named fastapi`, or another package | The environment is not active. Activate it; the prompt then starts with `(.venv)`. |
+| `command not found` when activating | You used the PowerShell command in Git Bash. Use `source .venv/Scripts/activate`. |
+| `Activate.ps1 cannot be loaded` in PowerShell | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, then activate again. |
 | The web app shows a CORS error in the browser console | The app's address is missing from `ALLOWED_ORIGINS` on the API. |
 | The web app calls the wrong address | `VITE_API_URL` is wrong or missing. Restart `npm run dev` after changing it. On the host, redeploy the site. |
 | The live site is slow on the first visit | The free API service was asleep. Wait about a minute. |
