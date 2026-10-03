@@ -6,6 +6,7 @@ repository or model.
 """
 from fastapi import Request
 
+from app.application.use_cases.explain_alert import ExplainAlert
 from app.application.use_cases.get_forecast import GetForecast
 from app.application.use_cases.get_metrics import GetMetrics
 from app.application.use_cases.list_users import ListUsers
@@ -26,6 +27,10 @@ def run_what_if_use_case(request: Request) -> RunWhatIf:
 
 def get_metrics_use_case(request: Request) -> GetMetrics:
     return request.app.state.get_metrics
+
+
+def explain_alert_use_case(request: Request) -> ExplainAlert:
+    return request.app.state.explain_alert
 
 
 def app_meta(request: Request) -> dict:

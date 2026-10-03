@@ -78,7 +78,7 @@ Tick a step when its test passes and it is committed.
 
 **F. Explanation:**
 
-- [ ] 18. Template explanation in Bangla and English
+- [x] 18. Template explanation in Bangla and English
 - [ ] 19. LLM explanation with fallback (optional)
 
 **G. Web app:**
@@ -633,10 +633,30 @@ In <http://127.0.0.1:8000/docs>:
 
 **Build:**
 
-- `app/application/ports/explainer.py`: the interface. Given a list of facts and a language, return text.
+- `app/application/ports/explainer.py`: the interface. Given the facts and a language, return text. It also holds the check that a text contains no number outside the facts.
 - `app/infrastructure/llm/template_explainer.py`: builds the text from the facts with fixed sentences. No LLM. The facts are the alert date, gap and probability, the main reasons, and the best action with its effect.
-- `app/application/use_cases/explain_alert.py` and `app/presentation/api/routers/explain.py`.
+- `app/application/use_cases/explain_alert.py`: collects the facts. It decides which reasons apply and which action lowers the chance most. The explainer only chooses the words.
+- `app/presentation/api/routers/explain.py` and `schemas/explain.py`.
 - `tests/unit/test_template_explainer.py`: every number in the text exists in the facts; both languages work; a user with no alert gets the all-clear text.
+- `tests/integration/test_explanations.py`: the same checks on 200 real cases from the generated users.
+
+The explain call returns this shape. The Ask screen in step 25 depends on it.
+
+```json
+{
+  "user_id": "U0121",
+  "as_of": "2026-08-12",
+  "language": "bn",
+  "has_alert": true,
+  "text": "২৩ আগস্ট নাগাদ আপনার ওয়ালেটে টাকার টান পড়তে পারে। ...\n\nকারণ:\n• ...",
+  "facts": { "alert_day": "2026-08-23", "alert_chance": 0.4454, "reasons": ["income_later", "payments_due", "spending_above_safe"], "action_id": "keep_to_safe_spend", "outcome": "removes_alert" }
+}
+```
+
+- `text` has line breaks between lines and an empty line between paragraphs. Show it with `white-space: pre-line`.
+- `has_alert` is `false` for the all-clear text.
+- `facts` holds every figure the text was built from. Only some of its fields are shown above.
+- `language` is `bn` or `en`. Left out, it is `bn`.
 
 **Test:**
 
@@ -645,7 +665,13 @@ python -m pytest -q
 uvicorn app.main:app --reload
 ```
 
-In `/docs`: `POST /users/U0001/explain` with `{"as_of": "2026-08-12", "language": "bn"}`, then with `"language": "en"`.
+In `/docs`, `POST /users/{user_id}/explain`:
+
+- `U0121` with `{"as_of": "2026-08-12", "language": "bn"}`, then with `"language": "en"`: a warning for 23 August that the action removes.
+- `U0001`: the balance is already low, and the action lowers the chance from 75% to 63%.
+- `U0061`: the all-clear text.
+
+All the sentences are in one place: `SENTENCES` and `LABELS` in `template_explainer.py`. The Bangla ones sit under the English ones with the same names. Edit the wording there and keep the gaps in curly brackets, such as `{balance}`.
 
 **Done when:** tests pass, and you have read the Bangla text yourselves and fixed anything that sounds unnatural.
 

@@ -2,12 +2,14 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.application.ports.explainer import numbers_in
 from app.infrastructure.config.settings import settings
 from app.infrastructure.ml.evaluation import load_metrics
 from app.main import app
 
 FORECAST = "/users/{}/forecast"
 WHAT_IF = "/users/{}/what-if"
+EXPLAIN = "/users/{}/explain"
 
 
 @pytest.fixture(scope="module")
@@ -156,6 +158,67 @@ def test_the_example_the_docs_page_pre_fills_really_works(client):
     boxes = prefilled(schema, "/users/{user_id}/forecast", "get")
     assert boxes == {"user_id": user_id, "as_of": body["as_of"]}
     assert client.get(FORECAST.format(boxes["user_id"]), params={"as_of": boxes["as_of"]}).status_code == 200
+
+    question = schema["components"]["schemas"]["ExplainIn"]["examples"][0]
+    assert prefilled(schema, "/users/{user_id}/explain", "post") == {"user_id": user_id}
+    answer = client.post(EXPLAIN.format(user_id), json=question)
+    assert answer.status_code == 200 and answer.json()["has_alert"]  # the example shows a warning, in Bangla
+
+
+# ---------- explanation ----------
+
+def test_explain_gives_the_warning_in_bangla_and_english(client):
+    bangla = client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-08-12", "language": "bn"})
+    english = client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-08-12", "language": "en"})
+    assert bangla.status_code == english.status_code == 200
+    bn, en = bangla.json(), english.json()
+    assert set(en) == {"user_id", "as_of", "language", "has_alert", "text", "facts"}
+    assert en["user_id"] == "U0121" and en["as_of"] == "2026-08-12" and en["has_alert"] and bn["has_alert"]
+    assert (bn["language"], en["language"]) == ("bn", "en") and bn["facts"] == en["facts"]
+    assert "23 August" in en["text"] and "২৩ আগস্ট" in bn["text"]
+    assert sorted(numbers_in(bn["text"])) == sorted(numbers_in(en["text"]))  # the same figures in both
+
+
+def test_the_explanation_uses_the_same_figures_as_the_forecast_and_what_if_calls(client):
+    forecast = client.get(FORECAST.format("U0121"), params={"as_of": "2026-08-12"}).json()
+    facts = client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-08-12", "language": "en"}).json()["facts"]
+    alert = forecast["alert"]
+    assert (facts["alert_day"], facts["alert_chance"], facts["alert_gap"]) == (alert["date"], alert["probability"], alert["gap"])
+    assert (facts["balance"], facts["cushion"]) == (forecast["balance"], forecast["cushion"])
+    assert (facts["safe_to_spend"], facts["window_until"]) == (forecast["safe_to_spend"], forecast["window_until"])
+    assert facts["payments_due"] == forecast["safe_to_spend_parts"]["payments_due"]
+    assert facts["next_income_day"] == forecast["income"]["next_day"]
+    assert facts["reasons"] == ["income_later", "payments_due", "spending_above_safe"]
+    assert facts["payment_label"] in {payment["label"] for payment in forecast["regular_payments"]}
+    # the action it recommends is one of the suggested ones, and what-if agrees about what it does
+    assert facts["action_id"] in [action["id"] for action in forecast["actions"]]
+    what_if = client.post(WHAT_IF.format("U0121"), json={"as_of": "2026-08-12", "actions": [facts["action_id"]]}).json()
+    assert facts["outcome"] == "removes_alert" and what_if["alert"] is None
+
+
+def test_an_alert_that_stays_is_explained_with_the_chance_that_remains(client):
+    facts = client.post(EXPLAIN.format("U0001"), json={"as_of": "2026-08-12", "language": "en"}).json()["facts"]
+    what_if = client.post(WHAT_IF.format("U0001"), json={"as_of": "2026-08-12", "actions": [facts["action_id"]]}).json()
+    assert facts["under_cushion_now"] and facts["outcome"] == "lowers_chance"
+    assert facts["chance_after"] == what_if["alert"]["probability"] < facts["alert_chance"]
+
+
+def test_a_comfortable_user_gets_the_all_clear(client):
+    body = client.post(EXPLAIN.format("U0061"), json={"as_of": "2026-08-12", "language": "en"}).json()
+    assert not body["has_alert"] and body["facts"]["alert_day"] is None
+    assert body["facts"]["reasons"] == [] and body["facts"]["action_id"] is None
+    assert "•" not in body["text"] and "৳8,022" in body["text"]  # no reasons or steps, just where things stand
+
+
+def test_explain_defaults_to_bangla_on_the_demo_day(client):
+    body = client.post(EXPLAIN.format("U0001"), json={}).json()
+    assert body["language"] == "bn" and body["as_of"] == "2026-08-12"
+
+
+def test_explain_refuses_what_it_cannot_do(client):
+    assert client.post(EXPLAIN.format("U0121"), json={"language": "fr"}).status_code == 422
+    assert client.post(EXPLAIN.format("U9999"), json={"language": "en"}).status_code == 404
+    assert client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-10-15", "language": "en"}).status_code == 422
 
 
 # ---------- model report ----------
