@@ -4,6 +4,7 @@ import datetime as dt
 from pydantic import BaseModel
 
 from app.application.use_cases.get_forecast import Assessment, ForecastResult
+from app.application.use_cases.run_what_if import WhatIfResult
 from app.domain.entities.user import User
 
 
@@ -105,3 +106,24 @@ def forecast_out(user: User, assessment: Assessment, actual: dict[dt.date, float
 
 def result_out(result: ForecastResult) -> ForecastOut:
     return forecast_out(result.user, result.assessment, result.actual)
+
+
+class WhatIfIn(BaseModel):
+    as_of: dt.date | None = None  # the day to treat as today; the demo day when left out
+    actions: list[str] = []  # ids of suggested actions to switch on
+
+
+class WhatIfOut(ForecastOut):
+    """The forecast response with the chosen actions applied: `points` and `alert` are the changed ones."""
+    applied: list[str]
+    alert_before: AlertOut | None  # the alert with no action, to compare with
+
+
+def what_if_out(what_if: WhatIfResult) -> WhatIfOut:
+    before = what_if.alert_before
+    return WhatIfOut(
+        **result_out(what_if.result).model_dump(),
+        applied=[action.id for action in what_if.applied],
+        alert_before=None if before is None else AlertOut(date=before.day, probability=before.chance, gap=before.gap,
+                                                          cushion=before.cushion),
+    )

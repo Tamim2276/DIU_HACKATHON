@@ -13,13 +13,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.application.use_cases.get_forecast import GetForecast
+from app.application.use_cases.get_metrics import GetMetrics
 from app.application.use_cases.list_users import ListUsers
+from app.application.use_cases.run_what_if import RunWhatIf
 from app.infrastructure.config.settings import BACKEND_DIR, settings
 from app.infrastructure.ml.features import MIN_HISTORY_DAYS
 from app.infrastructure.ml.quantile_forecaster import QuantileForecaster
 from app.infrastructure.repositories.csv_transaction_repository import CsvTransactionRepository
+from app.infrastructure.repositories.json_metrics_store import JsonMetricsStore
 from app.presentation.api.errors import register_error_handlers
-from app.presentation.api.routers import forecast, health, users
+from app.presentation.api.routers import forecast, health, metrics, users, what_if
 
 DEFAULT_ORIGINS = "http://localhost:5173"
 
@@ -41,6 +44,8 @@ def create_app() -> FastAPI:
     )
     app.state.list_users = ListUsers(repository)
     app.state.get_forecast = GetForecast(repository, forecaster)
+    app.state.run_what_if = RunWhatIf(app.state.get_forecast)
+    app.state.get_metrics = GetMetrics(JsonMetricsStore(settings.report_dir))
     app.state.meta = {
         "first_day": repository.first_day() + timedelta(days=MIN_HISTORY_DAYS),
         "last_day": repository.last_day(),
@@ -52,7 +57,7 @@ def create_app() -> FastAPI:
     app.add_middleware(CORSMiddleware, allow_origins=allowed_origins(), allow_methods=["GET", "POST"],
                        allow_headers=["*"])
     register_error_handlers(app)
-    for router in (health.router, users.router, forecast.router):
+    for router in (health.router, users.router, forecast.router, what_if.router, metrics.router):
         app.include_router(router)
     return app
 

@@ -2,9 +2,12 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.infrastructure.config.settings import settings
+from app.infrastructure.ml.evaluation import load_metrics
 from app.main import app
 
 FORECAST = "/users/{}/forecast"
+WHAT_IF = "/users/{}/what-if"
 
 
 @pytest.fixture(scope="module")
@@ -95,3 +98,54 @@ def test_the_web_app_address_is_allowed_and_others_are_not(client):
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
     other = client.get("/health", headers={"Origin": "http://example.com"})
     assert "access-control-allow-origin" not in other.headers
+
+
+# ---------- what-if ----------
+
+def test_what_if_changes_the_forecast_and_the_alert(client):
+    plain = client.get(FORECAST.format("U0121"), params={"as_of": "2026-08-12"}).json()
+    changed = client.post(WHAT_IF.format("U0121"), json={"as_of": "2026-08-12", "actions": ["keep_to_safe_spend"]})
+    assert changed.status_code == 200
+    body = changed.json()
+    assert set(body) == set(plain) | {"applied", "alert_before"}
+    assert body["applied"] == ["keep_to_safe_spend"]
+    assert body["alert_before"] == plain["alert"] and plain["alert"]["date"] == "2026-08-23"
+    assert body["alert"] is None  # keeping to the safe amount removes this user's shortfall
+    assert all(now["p50"] > was["p50"] for was, now in zip(plain["points"], body["points"]))
+    for unchanged in ("balance", "cushion", "safe_to_spend", "window_days", "regular_payments", "actions"):
+        assert body[unchanged] == plain[unchanged]
+
+
+def test_what_if_with_no_actions_returns_the_plain_forecast(client):
+    plain = client.get(FORECAST.format("U0001")).json()
+    body = client.post(WHAT_IF.format("U0001"), json={"actions": []}).json()  # no day given: the demo day
+    assert body["applied"] == [] and body["as_of"] == "2026-08-12"
+    assert body["points"] == plain["points"] and body["alert"] == body["alert_before"] == plain["alert"]
+
+
+def test_what_if_can_leave_the_alert_in_place(client):
+    # this rider's wallet is already empty: the actions help a little, but the shortfall stays
+    body = client.post(WHAT_IF.format("U0001"), json={"as_of": "2026-08-12", "actions": ["keep_to_safe_spend"]}).json()
+    assert body["alert_before"] is not None and body["alert"] is not None
+    assert body["alert"]["probability"] < body["alert_before"]["probability"]
+
+
+def test_what_if_refuses_an_action_that_was_not_suggested(client):
+    response = client.post(WHAT_IF.format("U0121"), json={"as_of": "2026-08-12", "actions": ["take_a_loan"]})
+    assert response.status_code == 422
+    assert "take_a_loan" in response.json()["detail"] and "keep_to_safe_spend" in response.json()["detail"]
+
+
+def test_what_if_for_an_unknown_user_is_404(client):
+    assert client.post(WHAT_IF.format("U9999"), json={"actions": []}).status_code == 404
+
+
+# ---------- model report ----------
+
+def test_metrics_returns_the_saved_test_results(client):
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    body = response.json()
+    assert body == load_metrics(settings.report_dir)
+    assert all(body["checks"].values())
+    assert body["early_warning"]["alert_level_used_in_the_app"] == 0.4

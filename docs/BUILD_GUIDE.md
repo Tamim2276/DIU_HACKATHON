@@ -73,8 +73,8 @@ Tick a step when its test passes and it is committed.
 **E. API:**
 
 - [x] 15. First endpoints: health, users, forecast
-- [ ] 16. Deploy the API
-- [ ] 17. What-if and model report endpoints
+- [ ] 16. Deploy the API (decided on 3 October: do this together with step 22, by midnight at the latest)
+- [x] 17. What-if and model report endpoints
 
 **F. Explanation:**
 

@@ -4,9 +4,12 @@ from datetime import date, datetime, time, timedelta
 import pytest
 
 from app.application.ports.forecaster import Forecaster, NotEnoughHistoryError
+from app.application.ports.metrics_store import MetricsStore, MetricsUnavailableError
 from app.application.ports.transaction_repository import TransactionRepository, UserNotFoundError
 from app.application.use_cases.get_forecast import GetForecast, InvalidDayError
+from app.application.use_cases.get_metrics import GetMetrics
 from app.application.use_cases.list_users import ListUsers
+from app.application.use_cases.run_what_if import RunWhatIf, UnknownActionError
 from app.domain.entities.forecast import Forecast, ForecastPoint
 from app.domain.entities.transaction import MONEY_OUT, Transaction
 from app.domain.entities.user import User
@@ -138,3 +141,86 @@ def test_too_little_history_is_passed_on():
 
     with pytest.raises(NotEnoughHistoryError):
         GetForecast(FakeRepository(), Refuses()).execute("U0001", TODAY)
+
+
+# ---------- what-if ----------
+
+def spent(days_ago: int, amount: float, type: str = "merchant_payment", to: str = "M-GRO-1", fee: float = 0.0) -> Transaction:
+    return Transaction("T", "U0001", datetime.combine(TODAY - timedelta(days=days_ago), time(12)), type, MONEY_OUT,
+                       amount, fee, to, "grocery", "app", 2000.0)
+
+
+class SpenderRepository(FakeRepository):
+    """A user who spends 300 at shops every day and cashes out 1,000 (fee 14) every five days. Balance 2,000."""
+
+    def get_transactions(self, user_id, up_to):
+        self.get_user(user_id)
+        history = [spent(d, 300.0) for d in range(30, 0, -1)]
+        history += [spent(d, 1000.0, type="cash_out", to="A-1", fee=14.0) for d in (27, 22, 17, 12, 7, 2)]
+        return sorted((t for t in history if t.timestamp.date() <= up_to), key=lambda t: t.timestamp)
+
+
+def what_if(actions):
+    """A forecast stuck at 300 taka, under the 400 cushion, for the spender above."""
+    return RunWhatIf(GetForecast(SpenderRepository(), FakeForecaster(likely=300.0))).execute("U0001", TODAY, actions)
+
+
+def test_what_if_with_no_actions_is_the_plain_forecast():
+    outcome = what_if([])
+    plain = GetForecast(SpenderRepository(), FakeForecaster(likely=300.0)).execute("U0001", TODAY)
+    assert outcome.applied == []
+    assert outcome.result == plain
+    assert outcome.alert_before == plain.assessment.alert is not None
+
+
+def test_the_spender_is_offered_two_actions():
+    assert [a.id for a in what_if([]).result.assessment.actions] == ["keep_to_safe_spend", "pay_directly"]
+
+
+def test_switching_an_action_on_raises_the_forecast_and_can_remove_the_alert():
+    before, after = what_if([]), what_if(["keep_to_safe_spend"])
+    action = after.applied[0]
+    assert action.id == "keep_to_safe_spend"
+    for i, (was, now) in enumerate(zip(before.result.assessment.forecast.points, after.result.assessment.forecast.points)):
+        assert now.p50 - was.p50 == pytest.approx(action.changes[i], abs=0.01)
+    assert after.alert_before is not None  # there was a shortfall
+    assert after.result.assessment.alert is None  # and the action removes it
+    # everything except the forecast and the alert stays as it was
+    assert after.result.assessment.safe_to_spend == before.result.assessment.safe_to_spend
+    assert after.result.assessment.actions == before.result.assessment.actions
+
+
+def test_several_actions_add_up_and_a_repeated_one_counts_once():
+    one = what_if(["keep_to_safe_spend"]).result.assessment.forecast.points[5].p50
+    both = what_if(["keep_to_safe_spend", "pay_directly", "pay_directly"])
+    assert [a.id for a in both.applied] == ["keep_to_safe_spend", "pay_directly"]
+    assert both.result.assessment.forecast.points[5].p50 > one
+
+
+def test_an_action_that_was_not_suggested_is_refused():
+    with pytest.raises(UnknownActionError) as error:
+        what_if(["move_payment"])  # a real kind of action, but not suggested to this user
+    assert "keep_to_safe_spend" in str(error.value)
+    with pytest.raises(UnknownActionError):
+        what_if(["take_a_loan"])
+
+
+# ---------- model report ----------
+
+class FakeStore(MetricsStore):
+    def __init__(self, results=None):
+        self.results = results
+
+    def load(self):
+        if self.results is None:
+            raise MetricsUnavailableError("no test results yet")
+        return self.results
+
+
+def test_metrics_come_from_the_store():
+    assert GetMetrics(FakeStore({"checks": {"ok": True}})).execute() == {"checks": {"ok": True}}
+
+
+def test_missing_metrics_are_reported():
+    with pytest.raises(MetricsUnavailableError):
+        GetMetrics(FakeStore()).execute()
