@@ -8,11 +8,14 @@ from app.application.ports.explainer import (
     INCOME_IRREGULAR,
     INCOME_LATER,
     LITTLE_CHANGE,
+    LLM,
     LOWERS_CHANCE,
     PAYMENTS_DUE,
     REMOVES_ALERT,
     SPENDING_ABOVE_SAFE,
+    TEMPLATE,
     Explainer,
+    Reply,
 )
 from app.application.ports.forecaster import Forecaster, NotEnoughHistoryError
 from app.application.ports.metrics_store import MetricsStore, MetricsUnavailableError
@@ -224,14 +227,14 @@ def test_an_action_that_was_not_suggested_is_refused():
 # ---------- explanation ----------
 
 class FakeExplainer(Explainer):
-    """Writes nothing real: it returns the language and remembers the facts it was given."""
+    """Writes nothing real: it returns the language and remembers what it was given."""
 
     def __init__(self):
         self.received = []
 
-    def explain(self, facts, language):
-        self.received.append((facts, language))
-        return f"text in {language}"
+    def explain(self, facts, language, question=None):
+        self.received.append((facts, language, question))
+        return Reply(f"text in {language}", LLM if question else TEMPLATE)
 
 
 def spender_assessment():
@@ -250,8 +253,19 @@ def test_the_explainer_is_given_the_facts_and_the_language():
     use_case = ExplainAlert(GetForecast(SpenderRepository(), FakeForecaster(likely=300.0)), explainer)
     explanation = use_case.execute("U0001", TODAY, "bn")
     assert explanation.user == USER and explanation.language == "bn" and explanation.text == "text in bn"
-    assert explainer.received == [(explanation.facts, "bn")]
+    assert explanation.source == TEMPLATE and explanation.question is None
+    assert explainer.received == [(explanation.facts, "bn", None)]
     assert explanation.facts == gather_facts(*spender_assessment())
+
+
+def test_a_question_is_passed_on_with_the_same_facts():
+    explainer = FakeExplainer()
+    use_case = ExplainAlert(GetForecast(SpenderRepository(), FakeForecaster(likely=300.0)), explainer)
+    answer = use_case.execute("U0001", TODAY, "en", "  Why do I run short?  ")
+    assert answer.question == "Why do I run short?" and answer.source == LLM  # who wrote it comes from the explainer
+    assert explainer.received == [(gather_facts(*spender_assessment()), "en", "Why do I run short?")]
+    blank = use_case.execute("U0001", TODAY, "en", "   ")
+    assert blank.question is None and explainer.received[-1][2] is None  # an empty question is no question
 
 
 def test_the_facts_for_a_user_with_a_warning():

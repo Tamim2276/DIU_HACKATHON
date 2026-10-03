@@ -43,6 +43,8 @@ class Explanation:
     language: str
     text: str
     facts: Facts  # everything the text was built from
+    source: str  # who wrote the text: the fixed sentences or a language model
+    question: str | None = None  # the customer's follow-up question, when there was one
 
 
 def best_action(assessment: Assessment) -> tuple[Action | None, Alert | None]:
@@ -130,9 +132,12 @@ class ExplainAlert:
         self._get_forecast = get_forecast
         self._explainer = explainer
 
-    def execute(self, user_id: str, as_of: date, language: str) -> Explanation:
+    def execute(self, user_id: str, as_of: date, language: str, question: str | None = None) -> Explanation:
+        """The standard explanation, or with a `question` the answer to it. Both rest on the same facts."""
         if language not in LANGUAGES:
             raise UnknownLanguageError(f"choose a language from: {', '.join(LANGUAGES)}")
+        question = (question or "").strip() or None
         user, forecast, history = self._get_forecast.load(user_id, as_of)
         facts = gather_facts(assess(forecast, history), history)
-        return Explanation(user, language, self._explainer.explain(facts, language), facts)
+        reply = self._explainer.explain(facts, language, question)
+        return Explanation(user, language, reply.text, facts, reply.source, question)

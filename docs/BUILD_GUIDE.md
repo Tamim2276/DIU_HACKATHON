@@ -79,7 +79,7 @@ Tick a step when its test passes and it is committed.
 **F. Explanation:**
 
 - [x] 18. Template explanation in Bangla and English
-- [ ] 19. LLM explanation with fallback (optional)
+- [x] 19. LLM explanation with fallback (optional)
 
 **G. Web app:**
 
@@ -583,6 +583,7 @@ The steps below use Render, a host with a free plan. Any host that runs a Python
 4. Environment variables:
    - `PYTHON_VERSION`: the exact version from step 3, for example `3.12.12`
    - `ALLOWED_ORIGINS`: `http://localhost:5173` for now
+   - `GEMINI_API_KEY`: your Gemini key, if you built step 19. Type it into the host's settings page. It never goes in the repository.
 5. Deploy and wait until the service is live.
 
 **Test:**
@@ -648,6 +649,8 @@ The explain call returns this shape. The Ask screen in step 25 depends on it.
   "as_of": "2026-08-12",
   "language": "bn",
   "has_alert": true,
+  "question": null,
+  "source": "template",
   "text": "২৩ আগস্ট নাগাদ আপনার ওয়ালেটে টাকার টান পড়তে পারে। ...\n\nকারণ:\n• ...",
   "facts": { "alert_day": "2026-08-23", "alert_chance": 0.4454, "reasons": ["income_later", "payments_due", "spending_above_safe"], "action_id": "keep_to_safe_spend", "outcome": "removes_alert" }
 }
@@ -655,6 +658,7 @@ The explain call returns this shape. The Ask screen in step 25 depends on it.
 
 - `text` has line breaks between lines and an empty line between paragraphs. Show it with `white-space: pre-line`.
 - `has_alert` is `false` for the all-clear text.
+- `question` and `source` belong to step 19. With a question, `source` is `llm` when the model answered it and `template` when the standard explanation is shown instead.
 - `facts` holds every figure the text was built from. Only some of its fields are shown above.
 - `language` is `bn` or `en`. Left out, it is `bn`.
 
@@ -681,14 +685,24 @@ All the sentences are in one place: `SENTENCES` and `LABELS` in `template_explai
 
 Skip this step if you have no API key or are short of time. Step 18 already meets the Must requirement.
 
-**Decide first:** which LLM provider, and whose key. The default is Claude, with the `anthropic` package and an `ANTHROPIC_API_KEY`. With a different provider, only `llm_explainer.py` changes.
+**Decided on 3 October:** Google Gemini, with a free key from <https://aistudio.google.com/apikey> in `GEMINI_API_KEY`. With a different provider, only `llm_explainer.py` changes.
+
+What the LLM does and does not do:
+
+- It answers a follow-up question, such as "Why do I run short?". The standard explanation from step 18 stays fixed text and never calls the LLM.
+- It is given the facts and the standard explanation and told to use nothing else.
+- Every number in its answer must be one of the facts, or a number from the customer's own question. Otherwise the answer is thrown away.
+- It decides nothing. The warning, the safe amount and the actions are fixed before it is called.
 
 **Build:**
 
-- `app/infrastructure/llm/llm_explainer.py`: sends the facts and the user's question to the LLM and tells it to use only those facts. It checks that every number in the answer exists in the facts. With no key, an error or a failed check, it returns the template text from step 18.
-- Install the provider's package and freeze `requirements.txt` again, as in step 3.
-- Put the key in `backend/.env`. Add the variable name with a placeholder value to `.env.example`.
-- `tests/unit/test_llm_explainer.py`: with no key the template is used; an answer containing an unknown number is rejected. The tests use a fake LLM reply, so they need no key.
+- `app/infrastructure/llm/llm_explainer.py`: sends the facts, the standard explanation and the question to Gemini. With no key, an error, a slow reply or a failed check, it returns the template text from step 18.
+- No new package: the call uses `httpx`, which is already in `requirements.txt`.
+- Put the key in `backend/.env`. `.env.example` lists the variable name with no value.
+- The explain call takes an optional `question` (at most 300 characters). The response gains `question` and `source`: `llm` when the model answered, `template` when the standard explanation is shown.
+- `tests/unit/test_llm_explainer.py`: with no key the template is used; an answer containing an unknown number is rejected. The tests use a fake LLM reply, so they need no key and no network.
+
+Three Gemini models are listed in `llm_explainer.py`. The first is asked. If it fails, or has not answered after 4 seconds, the next is asked as well and the first answer wins. After 15 seconds the standard explanation is shown. `GEMINI_MODELS` in `.env` replaces the list.
 
 **Test:**
 
@@ -697,7 +711,19 @@ python -m pytest -q
 uvicorn app.main:app --reload
 ```
 
-In `/docs`, call `/explain` with `"question": "Why do I run short?"`. Remove the key from `.env`, restart, and call it again. You should get the template text and no error.
+In `/docs`, `POST /users/U0121/explain` with:
+
+```json
+{ "as_of": "2026-08-12", "language": "en", "question": "Why do I run short?" }
+```
+
+You should get `"source": "llm"` after about 5 seconds. Then empty the `GEMINI_API_KEY` line in `.env`, restart the server and call it again. You should get `"source": "template"`, the standard text and no error. Put the key back afterwards.
+
+Things to know:
+
+- The free plan allows only a few questions a minute. Over the limit, answers fall back to the standard explanation for a while.
+- Only the facts of one synthetic user are sent to Gemini. No names, phone numbers or account numbers exist in the data.
+- When the server throws an answer away, it prints the reason in the terminal where `uvicorn` runs.
 
 **Done when:** it works with a key and without one. Then add the key as an environment variable on the host. Never commit it.
 

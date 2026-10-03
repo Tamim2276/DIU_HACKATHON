@@ -2,10 +2,14 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app import main
 from app.application.ports.explainer import numbers_in
+from app.application.use_cases.explain_alert import ExplainAlert
 from app.infrastructure.config.settings import settings
+from app.infrastructure.llm.llm_explainer import LlmExplainer
+from app.infrastructure.llm.template_explainer import TemplateExplainer
 from app.infrastructure.ml.evaluation import load_metrics
-from app.main import app
+from app.main import app, make_explainer
 
 FORECAST = "/users/{}/forecast"
 WHAT_IF = "/users/{}/what-if"
@@ -172,8 +176,9 @@ def test_explain_gives_the_warning_in_bangla_and_english(client):
     english = client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-08-12", "language": "en"})
     assert bangla.status_code == english.status_code == 200
     bn, en = bangla.json(), english.json()
-    assert set(en) == {"user_id", "as_of", "language", "has_alert", "text", "facts"}
+    assert set(en) == {"user_id", "as_of", "language", "has_alert", "question", "source", "text", "facts"}
     assert en["user_id"] == "U0121" and en["as_of"] == "2026-08-12" and en["has_alert"] and bn["has_alert"]
+    assert en["source"] == bn["source"] == "template" and en["question"] is None  # no question: the fixed sentences
     assert (bn["language"], en["language"]) == ("bn", "en") and bn["facts"] == en["facts"]
     assert "23 August" in en["text"] and "২৩ আগস্ট" in bn["text"]
     assert sorted(numbers_in(bn["text"])) == sorted(numbers_in(en["text"]))  # the same figures in both
@@ -219,6 +224,70 @@ def test_explain_refuses_what_it_cannot_do(client):
     assert client.post(EXPLAIN.format("U0121"), json={"language": "fr"}).status_code == 422
     assert client.post(EXPLAIN.format("U9999"), json={"language": "en"}).status_code == 404
     assert client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-10-15", "language": "en"}).status_code == 422
+    assert client.post(EXPLAIN.format("U0121"), json={"language": "en", "question": "why? " * 80}).status_code == 422
+
+
+# ---------- follow-up questions ----------
+# The real model is never called in tests: a made-up reply stands in for it, so no key or network is needed.
+
+def with_model(monkeypatch, reply):
+    """Make the app answer questions with `reply` as the model's answer. None stands for "no key"."""
+    asked = []
+
+    def model(instructions, message):
+        asked.append(message)
+        return reply
+
+    explainer = LlmExplainer(TemplateExplainer(), None if reply is None else model)
+    monkeypatch.setattr(app.state, "explain_alert", ExplainAlert(app.state.get_forecast, explainer))
+    return asked
+
+
+QUESTION = {"as_of": "2026-08-12", "language": "en", "question": "Why do I run short?"}
+
+
+def test_a_question_is_answered_by_the_model_from_the_users_facts(client, monkeypatch):
+    asked = with_model(monkeypatch, "Your next income is expected on 8 September, 27 days from now.")
+    body = client.post(EXPLAIN.format("U0121"), json=QUESTION).json()
+    assert body["source"] == "llm" and body["question"] == "Why do I run short?"
+    assert body["text"] == "Your next income is expected on 8 September, 27 days from now."
+    assert "Wallet balance today: ৳1,771" in asked[0] and "Why do I run short?" in asked[0]
+
+
+def test_an_answer_with_a_made_up_number_is_replaced_by_the_standard_explanation(client, monkeypatch):
+    standard = client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-08-12", "language": "en"}).json()
+    with_model(monkeypatch, "You will be ৳2,500 short on 23 August.")
+    body = client.post(EXPLAIN.format("U0121"), json=QUESTION).json()
+    assert body["source"] == "template" and body["text"] == standard["text"]
+    assert body["question"] == "Why do I run short?"  # the web app can tell the question was not answered
+
+
+def test_without_a_key_a_question_gets_the_standard_explanation_and_no_error(client, monkeypatch):
+    standard = client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-08-12", "language": "en"}).json()
+    with_model(monkeypatch, None)
+    response = client.post(EXPLAIN.format("U0121"), json=QUESTION)
+    assert response.status_code == 200
+    assert response.json()["source"] == "template" and response.json()["text"] == standard["text"]
+
+
+def test_the_standard_explanation_never_calls_the_model(client, monkeypatch):
+    asked = with_model(monkeypatch, "anything")
+    body = client.post(EXPLAIN.format("U0121"), json={"as_of": "2026-08-12", "language": "bn"}).json()
+    assert body["source"] == "template" and asked == []
+
+
+def test_the_app_only_uses_a_model_when_a_key_is_set(monkeypatch):
+    question = ("U0121", settings.demo_today, "en", "Why do I run short?")
+    monkeypatch.setenv("GEMINI_API_KEY", "  ")
+    without = ExplainAlert(app.state.get_forecast, make_explainer())
+    assert without.execute(*question).source == "template"
+
+    calls = []
+    monkeypatch.setenv("GEMINI_API_KEY", "a-key")
+    monkeypatch.setenv("GEMINI_MODELS", "model-a, model-b")
+    monkeypatch.setattr(main, "gemini", lambda key, models: calls.append((key, models)) or (lambda rules, message: "No."))
+    assert ExplainAlert(app.state.get_forecast, make_explainer()).execute(*question).source == "llm"
+    assert calls == [("a-key", ("model-a", "model-b"))]
 
 
 # ---------- model report ----------

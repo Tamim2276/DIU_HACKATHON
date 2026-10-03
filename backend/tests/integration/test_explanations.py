@@ -30,7 +30,7 @@ def explained():
         for user in repository.list_users()[::3]:
             _, forecast, history = get_forecast.load(user.user_id, day)
             facts = gather_facts(assess(forecast, history), history)
-            cases.append((facts, {language: explainer.explain(facts, language) for language in LANGUAGES}))
+            cases.append((facts, {language: explainer.explain(facts, language).text for language in LANGUAGES}))
     return cases
 
 

@@ -25,6 +25,7 @@ from app.application.ports.explainer import (
     REASONS,
     REMOVES_ALERT,
     SPENDING_ABOVE_SAFE,
+    TEMPLATE,
     Facts,
     numbers_in,
     unknown_numbers,
@@ -82,7 +83,7 @@ EVERY_CASE = {"clear": CLEAR, "clear_but_low": CLEAR_BUT_LOW, "warning": WARNING
 
 
 def explain(facts: Facts, language: str = ENGLISH) -> str:
-    return TemplateExplainer().explain(facts, language)
+    return TemplateExplainer().explain(facts, language).text
 
 
 def bangla(text: str) -> str:
@@ -117,6 +118,9 @@ def test_the_check_catches_a_number_that_is_not_a_fact():
     assert unknown_numbers("You will be ৳999 short on 23 August.", WARNING) == [999]
     assert unknown_numbers("আপনার ৳৯৯৯ কম পড়বে।", WARNING) == [999]
     assert unknown_numbers("About ৳678.66 short.", WARNING) == [678.66]  # amounts are written in whole taka
+    # a number from the customer's own question may be repeated in the answer
+    assert unknown_numbers("৳500 is more than ৳34.", WARNING) == [500]
+    assert unknown_numbers("৳500 is more than ৳34.", WARNING, "Can I spend ৳500 tomorrow?") == []
 
 
 def test_numbers_are_read_in_both_kinds_of_digits():
@@ -273,3 +277,9 @@ def test_amounts_are_written_in_whole_taka_with_separators():
 def test_an_unknown_language_is_refused():
     with pytest.raises(ValueError):
         explain(WARNING, "fr")
+
+
+def test_the_reply_says_it_came_from_the_fixed_sentences_and_a_question_changes_nothing():
+    plain = TemplateExplainer().explain(WARNING, ENGLISH)
+    asked = TemplateExplainer().explain(WARNING, ENGLISH, "Why do I run short?")
+    assert plain.source == TEMPLATE and asked == plain

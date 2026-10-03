@@ -24,6 +24,8 @@ OUTCOMES = (REMOVES_ALERT, LOWERS_CHANCE, LITTLE_CHANGE)
 
 CHANCES = ("alert_chance", "chance_after")  # facts between 0 and 1, written as a percentage
 
+TEMPLATE, LLM = "template", "llm"  # who wrote a text: the fixed sentences, or a language model
+
 
 @dataclass(frozen=True)
 class Facts:
@@ -92,16 +94,26 @@ def numbers_in(text: str) -> list[float]:
     return [float(found.replace(",", "")) for found in re.findall(r"\d[\d,]*(?:\.\d+)?", plain)]
 
 
-def unknown_numbers(text: str, facts: Facts) -> list[float]:
-    """Numbers in the text that are not among the facts. An honest explanation has none."""
-    allowed = facts.numbers()
+def unknown_numbers(text: str, facts: Facts, question: str | None = None) -> list[float]:
+    """Numbers in the text that are not among the facts. An honest explanation has none.
+
+    A number the customer wrote in their own question may be repeated in the answer.
+    """
+    allowed = facts.numbers() | set(numbers_in(question or ""))
     return [number for number in numbers_in(text) if number not in allowed]
+
+
+@dataclass(frozen=True)
+class Reply:
+    text: str  # lines are separated by a line break, paragraphs by an empty line
+    source: str  # TEMPLATE or LLM
 
 
 class Explainer(ABC):
     @abstractmethod
-    def explain(self, facts: Facts, language: str) -> str:
-        """The explanation as plain text in the language asked for, one of LANGUAGES.
+    def explain(self, facts: Facts, language: str, question: str | None = None) -> Reply:
+        """The explanation in the language asked for, one of LANGUAGES.
 
-        Lines are separated by a line break and paragraphs by an empty line.
+        With a `question`, the reply answers that question about the same facts
+        when the explainer is able to; otherwise it is the standard explanation.
         """

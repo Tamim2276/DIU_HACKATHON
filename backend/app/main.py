@@ -12,12 +12,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.application.ports.explainer import Explainer
 from app.application.use_cases.explain_alert import ExplainAlert
 from app.application.use_cases.get_forecast import GetForecast
 from app.application.use_cases.get_metrics import GetMetrics
 from app.application.use_cases.list_users import ListUsers
 from app.application.use_cases.run_what_if import RunWhatIf
 from app.infrastructure.config.settings import BACKEND_DIR, settings
+from app.infrastructure.llm.llm_explainer import DEFAULT_MODELS, LlmExplainer, gemini
 from app.infrastructure.llm.template_explainer import TemplateExplainer
 from app.infrastructure.ml.features import MIN_HISTORY_DAYS
 from app.infrastructure.ml.quantile_forecaster import QuantileForecaster
@@ -34,6 +36,15 @@ def allowed_origins() -> list[str]:
     return [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", DEFAULT_ORIGINS).split(",") if origin.strip()]
 
 
+def make_explainer() -> Explainer:
+    """The fixed sentences, always. With GEMINI_API_KEY set, follow-up questions are answered by Gemini
+    and checked; without it, a question gets the standard explanation."""
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    models = tuple(model.strip() for model in os.getenv("GEMINI_MODELS", "").split(",") if model.strip())
+    ask = gemini(key, models or DEFAULT_MODELS) if key else None
+    return LlmExplainer(TemplateExplainer(), ask)
+
+
 def create_app() -> FastAPI:
     load_dotenv(BACKEND_DIR / ".env")
     repository = CsvTransactionRepository(settings.data_dir)
@@ -47,7 +58,7 @@ def create_app() -> FastAPI:
     app.state.list_users = ListUsers(repository)
     app.state.get_forecast = GetForecast(repository, forecaster)
     app.state.run_what_if = RunWhatIf(app.state.get_forecast)
-    app.state.explain_alert = ExplainAlert(app.state.get_forecast, TemplateExplainer())
+    app.state.explain_alert = ExplainAlert(app.state.get_forecast, make_explainer())
     app.state.get_metrics = GetMetrics(JsonMetricsStore(settings.report_dir))
     app.state.meta = {
         "first_day": repository.first_day() + timedelta(days=MIN_HISTORY_DAYS),

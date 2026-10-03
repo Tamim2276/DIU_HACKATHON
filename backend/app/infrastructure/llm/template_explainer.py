@@ -21,8 +21,10 @@ from app.application.ports.explainer import (
     PAYMENTS_DUE,
     REMOVES_ALERT,
     SPENDING_ABOVE_SAFE,
+    TEMPLATE,
     Explainer,
     Facts,
+    Reply,
 )
 from app.domain.services.actions import KEEP_TO_SAFE_SPEND, MOVE_PAYMENT, PAY_DIRECTLY
 
@@ -209,7 +211,8 @@ def _reason(reason: str, facts: Facts) -> tuple[str, ...]:
 
 
 class TemplateExplainer(Explainer):
-    def explain(self, facts: Facts, language: str) -> str:
+    def explain(self, facts: Facts, language: str, question: str | None = None) -> Reply:
+        """The standard explanation. Fixed sentences cannot answer a question, so `question` changes nothing."""
         if language not in SENTENCES:
             raise ValueError(f"no sentences written for language {language!r}")
         sentences, gaps = SENTENCES[language], _gaps(facts, language)
@@ -238,4 +241,6 @@ class TemplateExplainer(Explainer):
         paragraphs.append(say("note"))
 
         text = "\n\n".join(paragraphs)
-        return text.translate(str.maketrans("0123456789", BANGLA_DIGITS)) if language == BANGLA else text
+        if language == BANGLA:
+            text = text.translate(str.maketrans("0123456789", BANGLA_DIGITS))
+        return Reply(text, TEMPLATE)

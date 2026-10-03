@@ -16,5 +16,9 @@ def explain(
 ) -> ExplainOut:
     """The warning in plain sentences, in Bangla (`bn`) or English (`en`): what is likely to happen,
     why, and what to do. A user with no warning gets the all-clear. `facts` holds every figure the
-    text was built from; the text contains no other number."""
-    return explain_out(use_case.execute(user_id, body.as_of or meta["default_day"], body.language))
+    text was built from; the text contains no other number.
+
+    With a `question`, a language model answers it from the same facts (`source` is `llm`). Its answer
+    is only shown if every number in it is one of the facts. Without a key for the model, or when the
+    answer fails that check, the standard explanation is returned instead (`source` is `template`)."""
+    return explain_out(use_case.execute(user_id, body.as_of or meta["default_day"], body.language, body.question))
