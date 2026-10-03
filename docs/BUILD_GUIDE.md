@@ -54,7 +54,7 @@ Tick a step when its test passes and it is committed.
 
 - [x] 4. Settings and first entities
 - [x] 5. Synthetic data generator
-- [ ] 6. Reading the data
+- [x] 6. Reading the data
 
 **C. Forecast model:**
 

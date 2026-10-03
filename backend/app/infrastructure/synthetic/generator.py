@@ -16,8 +16,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ..config.settings import Settings, settings
-from .personas import MERCHANT_CATEGORIES, MERCHANT_WEIGHTS, PERSONAS, RECHARGE_AMOUNTS, Persona
+from app.infrastructure.config.settings import Settings, settings
+from app.infrastructure.synthetic.personas import (
+    MERCHANT_CATEGORIES,
+    MERCHANT_WEIGHTS,
+    PERSONAS,
+    RECHARGE_AMOUNTS,
+    Persona,
+)
 
 MONTH_DAYS = 30.4
 
