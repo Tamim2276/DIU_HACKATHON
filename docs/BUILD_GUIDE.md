@@ -46,9 +46,9 @@ Tick a step when its test passes and it is committed.
 
 **A. Setup:**
 
-- [ ] 1. Check tools
-- [ ] 2. Git repository and first push
-- [ ] 3. Virtual environment and packages
+- [x] 1. Check tools
+- [x] 2. Git repository and first push
+- [x] 3. Virtual environment and packages
 
 **B. Data:**
 
