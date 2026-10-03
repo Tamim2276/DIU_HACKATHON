@@ -10,6 +10,7 @@ from datetime import date, timedelta
 import pandas as pd
 import pytest
 
+from app.domain.services.actions import ACTION_IDS, apply_actions, suggest_actions
 from app.domain.services.income_pattern import DAILY, IRREGULAR, MONTHLY, find_income_pattern, next_income_day
 from app.domain.services.regular_payments import find_regular_payments, upcoming_payments
 from app.domain.services.safe_to_spend import plan_safe_to_spend
@@ -80,6 +81,24 @@ def test_safe_to_spend_works_for_real_users_of_every_persona(cases):
         if pattern.kind != MONTHLY:
             assert plan.window_days == 14
         assert plan.cautious_income >= 0 and plan.payments_due >= 0 and plan.cushion > 0
+
+
+def test_actions_on_real_users_only_ever_raise_the_forecast(cases):
+    forecaster = QuantileForecaster(settings.model_dir)
+    suggested = Counter()
+    for _, transactions, _ in cases[::5]:
+        regular = find_regular_payments(transactions, TODAY)
+        due = upcoming_payments(regular, transactions, TODAY)
+        income_day = next_income_day(find_income_pattern(transactions, TODAY), transactions, TODAY)
+        forecast = forecaster.forecast(transactions, TODAY)
+        plan = plan_safe_to_spend(forecast, regular, due, income_day)
+        actions = suggest_actions(forecast, plan, regular, due, transactions, income_day)
+        assert len(actions) <= 3 and len({a.id for a in actions}) == len(actions)
+        assert all(a.id in ACTION_IDS and a.effect >= 1 and len(a.changes) == len(forecast.points) for a in actions)
+        after = apply_actions(forecast, actions)
+        assert all(now.p50 >= before.p50 for before, now in zip(forecast.points, after.points))
+        suggested.update(a.id for a in actions)
+    assert set(suggested) == set(ACTION_IDS)  # every kind of action is suggested for someone
 
 
 def test_upcoming_payments_and_next_income_day_are_in_the_future(cases):
