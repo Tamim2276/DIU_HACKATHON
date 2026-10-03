@@ -66,7 +66,7 @@ Tick a step when its test passes and it is committed.
 **D. Rules:**
 
 - [x] 11. Shortfall alert
-- [ ] 12. Regular payments and income day
+- [x] 12. Regular payments and income day
 - [ ] 13. Safe to spend
 - [ ] 14. Actions and what-if
 
