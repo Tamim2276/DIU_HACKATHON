@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
+from app.domain.services.shortfall import ALERT_CHANCE, CUSHION_DAYS, WARNING_DAYS
 from app.infrastructure.config.settings import Settings, settings
 from app.infrastructure.ml.baselines import BASELINES
 from app.infrastructure.ml.features import FEATURE_NAMES
@@ -30,9 +31,8 @@ from app.infrastructure.ml.training import (
 
 METRICS_FILE = "metrics.json"
 REPORTED_DAYS = (7, 14, 30)
-WARNING_WINDOW = 14  # a warning looks this many days ahead
-CUSHION_DAYS = 1.0  # the safety cushion: one day of the user's typical spending
-ALERT_LEVELS = (0.5, 0.4, 0.3)  # alert when the chance of going under the cushion is at least this
+WARNING_WINDOW = WARNING_DAYS  # the warning window, cushion and alert level come from the shortfall rule itself,
+ALERT_LEVELS = (0.5, 0.4, 0.3)  # so what is graded here is exactly what the app does; other levels are for comparison
 BEST_SIMPLE = "average of the last 3 months"
 INCOME_TOLERANCE = 0.5  # days of typical spending
 
@@ -127,7 +127,8 @@ def evaluate(panel: Panel, models: dict, short: np.ndarray, personas: list[str],
 
     # ---------- early warning, graded against the hidden truth ----------
     today = (data.balance / data.scale).reshape(cube)[:, :, 0]  # balance today, in days of spending
-    forecast = today[:, :, None, None] + levels.reshape(*cube, len(QUANTILES))
+    # cut off at zero, as the forecaster does: a wallet cannot go below zero
+    forecast = np.maximum(today[:, :, None, None] + levels.reshape(*cube, len(QUANTILES)), 0.0)
     simple_forecast = today[:, :, None] + simple[BEST_SIMPLE].reshape(cube)
     chance = prob_below(forecast[:, :, :WARNING_WINDOW, :], CUSHION_DAYS).max(axis=2)  # (users, origins)
     simple_lowest = simple_forecast[:, :, :WARNING_WINDOW].min(axis=2)
@@ -143,7 +144,8 @@ def evaluate(panel: Panel, models: dict, short: np.ndarray, personas: list[str],
     matched = float(np.quantile(score[~real], 1 - simple_scores["false_alarms"]))
     points = [{"warning": "simple rule: the 3-month average says the balance goes under the cushion", **simple_scores},
               {"warning": "model, tuned to the same number of false alarms", **_warning_scores(score >= matched, real)}]
-    points += [{"warning": f"model, chance of going under the cushion at least {round(level * 100)}%",
+    points += [{"warning": f"model, chance of going under the cushion at least {round(level * 100)}%"
+                           + (" (used in the app)" if level == ALERT_CHANCE else ""),
                 **_warning_scores(score >= level, real)} for level in ALERT_LEVELS]
 
     # new shortfalls: a short day after at least seven clear days. Was there a warning seven days earlier?
@@ -221,6 +223,7 @@ def evaluate(panel: Panel, models: dict, short: np.ndarray, personas: list[str],
         "early_warning": {
             "question": f"On days when the user is not short, will they run short in the next {WARNING_WINDOW} days?",
             "cushion": "one day of the user's typical spending",
+            "alert_level_used_in_the_app": ALERT_CHANCE,
             "days_asked": int(ask.sum()),
             "share_followed_by_a_shortfall": _share(real),
             "ranking_quality": ranking,  # 0.5 is guessing, 1.0 is perfect

@@ -456,6 +456,7 @@
   "early_warning": {
     "question": "On days when the user is not short, will they run short in the next 14 days?",
     "cushion": "one day of the user's typical spending",
+    "alert_level_used_in_the_app": 0.4,
     "days_asked": 16038,
     "share_followed_by_a_shortfall": 0.2646,
     "ranking_quality": {
@@ -471,8 +472,8 @@
       },
       {
         "warning": "model, tuned to the same number of false alarms",
-        "caught": 0.7337,
-        "right": 0.5123,
+        "caught": 0.733,
+        "right": 0.512,
         "false_alarms": 0.2514
       },
       {
@@ -482,16 +483,16 @@
         "false_alarms": 0.054
       },
       {
-        "warning": "model, chance of going under the cushion at least 40%",
-        "caught": 0.5179,
-        "right": 0.6332,
-        "false_alarms": 0.1079
+        "warning": "model, chance of going under the cushion at least 40% (used in the app)",
+        "caught": 0.5167,
+        "right": 0.6333,
+        "false_alarms": 0.1077
       },
       {
         "warning": "model, chance of going under the cushion at least 30%",
         "caught": 0.7663,
-        "right": 0.4956,
-        "false_alarms": 0.2807
+        "right": 0.4957,
+        "false_alarms": 0.2805
       }
     ],
     "new_shortfalls": 316,
@@ -499,7 +500,7 @@
       "simple rule": 0.6171,
       "model, same false alarms": 0.7532,
       "model, at least 50%": 0.3481,
-      "model, at least 40%": 0.5253,
+      "model, at least 40%": 0.519,
       "model, at least 30%": 0.769
     }
   },

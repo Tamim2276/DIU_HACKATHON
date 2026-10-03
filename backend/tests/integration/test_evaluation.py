@@ -1,7 +1,10 @@
 """The full evaluation on July and August, and the saved report."""
+from datetime import date
+
 import numpy as np
 import pytest
 
+from app.domain.services.shortfall import ALERT_CHANCE, WARNING_DAYS, chance_below, find_shortfall, safety_cushion
 from app.infrastructure.config.settings import settings
 from app.infrastructure.ml.baselines import BASELINES
 from app.infrastructure.ml.evaluation import (
@@ -15,7 +18,9 @@ from app.infrastructure.ml.evaluation import (
     save_metrics,
 )
 from app.infrastructure.ml.panel import panel_from_frame, read_transactions
-from app.infrastructure.ml.training import load_models
+from app.infrastructure.ml.quantile_forecaster import QuantileForecaster
+from app.infrastructure.ml.training import QUANTILES, load_models
+from app.infrastructure.repositories.csv_transaction_repository import CsvTransactionRepository
 
 
 @pytest.fixture(scope="module")
@@ -42,6 +47,42 @@ def test_chance_of_being_under_a_threshold(threshold, chance):
 def test_chance_rises_with_the_threshold():
     chances = [prob_below(LEVELS, t)[0] for t in np.linspace(-20, 80, 60)]
     assert all(later >= earlier for earlier, later in zip(chances, chances[1:]))
+
+
+# ---------- what is graded here is what the app does ----------
+
+def test_the_graded_chance_equals_the_shortfall_rules_chance():
+    rng = np.random.default_rng(1)
+    for i in range(500):
+        levels = np.sort(rng.uniform(0, 5000, 5))
+        if i % 4 == 0:
+            levels[: rng.integers(1, 4)] = 0.0  # forecasts cut off at zero have equal lower levels
+        threshold = float(rng.uniform(-500, 6000))
+        by_rule = chance_below(dict(zip(QUANTILES, levels.tolist())), threshold)
+        assert prob_below(levels[None, :], threshold)[0] == pytest.approx(by_rule, abs=1e-9)
+
+
+def test_the_apps_alert_is_the_alert_that_was_graded():
+    repository = CsvTransactionRepository(settings.data_dir)
+    forecaster = QuantileForecaster(settings.model_dir)
+    fired = 0
+    for user in repository.list_users()[::12]:
+        for today in (date(2026, 7, 6), date(2026, 7, 27), date(2026, 8, 12)):
+            forecast = forecaster.forecast(repository.get_transactions(user.user_id, today), today)
+            levels = np.array([[p.p10, p.p25, p.p50, p.p75, p.p90] for p in forecast.points[:WARNING_DAYS]])
+            graded_chance = prob_below(levels, safety_cushion(forecast)).max()
+            alert = find_shortfall(forecast)
+            assert (alert is not None) == (graded_chance >= ALERT_CHANCE), (user.user_id, today)
+            if alert is not None:
+                fired += 1
+                assert alert.chance == pytest.approx(graded_chance, abs=1e-4)
+    assert 0 < fired < 75  # some of the 75 forecasts alert and some do not
+
+
+def test_the_alert_level_used_in_the_app_is_one_of_the_graded_levels(results):
+    warn = results["early_warning"]
+    assert warn["alert_level_used_in_the_app"] == ALERT_CHANCE
+    assert sum("(used in the app)" in point["warning"] for point in warn["warnings"]) == 1
 
 
 # ---------- the three checks that decide whether the model is good enough ----------
