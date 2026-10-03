@@ -112,6 +112,9 @@ class WhatIfIn(BaseModel):
     as_of: dt.date | None = None  # the day to treat as today; the demo day when left out
     actions: list[str] = []  # ids of suggested actions to switch on
 
+    # What the docs page pre-fills, so "Try it out" works without editing. Use it with user U0121.
+    model_config = {"json_schema_extra": {"examples": [{"as_of": "2026-08-12", "actions": ["keep_to_safe_spend"]}]}}
+
 
 class WhatIfOut(ForecastOut):
     """The forecast response with the chosen actions applied: `points` and `alert` are the changed ones."""

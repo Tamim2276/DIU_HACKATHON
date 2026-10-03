@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Path
 
 from app.application.use_cases.run_what_if import RunWhatIf
 from app.presentation.api.dependencies import app_meta, run_what_if_use_case
@@ -9,8 +9,8 @@ router = APIRouter(tags=["forecast"])
 
 @router.post("/users/{user_id}/what-if", response_model=WhatIfOut)
 def what_if(
-    user_id: str,
     body: WhatIfIn,
+    user_id: str = Path(description="A user id from the users call.", json_schema_extra={"example": "U0121"}),
     use_case: RunWhatIf = Depends(run_what_if_use_case),
     meta: dict = Depends(app_meta),
 ) -> WhatIfOut:

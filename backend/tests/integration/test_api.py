@@ -140,6 +140,24 @@ def test_what_if_for_an_unknown_user_is_404(client):
     assert client.post(WHAT_IF.format("U9999"), json={"actions": []}).status_code == 404
 
 
+def prefilled(schema: dict, path: str, method: str) -> dict:
+    """What the docs page puts in each parameter box. It reads `example` there; a list of `examples` is ignored."""
+    return {p["name"]: p["schema"]["example"] for p in schema["paths"][path][method]["parameters"]}
+
+
+def test_the_example_the_docs_page_pre_fills_really_works(client):
+    schema = client.get("/openapi.json").json()
+    body = schema["components"]["schemas"]["WhatIfIn"]["examples"][0]  # for a request body the page reads the list
+    assert body["as_of"] == client.get("/meta").json()["default_day"]
+    user_id = prefilled(schema, "/users/{user_id}/what-if", "post")["user_id"]
+    response = client.post(WHAT_IF.format(user_id), json=body)
+    assert response.status_code == 200 and response.json()["applied"] == body["actions"]
+
+    boxes = prefilled(schema, "/users/{user_id}/forecast", "get")
+    assert boxes == {"user_id": user_id, "as_of": body["as_of"]}
+    assert client.get(FORECAST.format(boxes["user_id"]), params={"as_of": boxes["as_of"]}).status_code == 200
+
+
 # ---------- model report ----------
 
 def test_metrics_returns_the_saved_test_results(client):

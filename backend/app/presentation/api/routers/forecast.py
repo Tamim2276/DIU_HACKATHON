@@ -1,6 +1,6 @@
 import datetime as dt
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Path, Query
 
 from app.application.use_cases.get_forecast import GetForecast
 from app.presentation.api.dependencies import app_meta, get_forecast_use_case
@@ -11,9 +11,10 @@ router = APIRouter(tags=["forecast"])
 
 @router.get("/users/{user_id}/forecast", response_model=ForecastOut)
 def get_forecast(
-    user_id: str,
-    as_of: dt.date | None = Query(None, description="The day to treat as today, as YYYY-MM-DD. "
-                                                    "Only transactions up to this day are used."),
+    user_id: str = Path(description="A user id from the users call.", json_schema_extra={"example": "U0121"}),
+    as_of: dt.date | None = Query(None, json_schema_extra={"example": "2026-08-12"},
+                                  description="The day to treat as today, as YYYY-MM-DD. Only transactions up to "
+                                              "this day are used. Leave empty for the demo day."),
     use_case: GetForecast = Depends(get_forecast_use_case),
     meta: dict = Depends(app_meta),
 ) -> ForecastOut:
