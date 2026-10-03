@@ -4,7 +4,7 @@ A wallet feature that warns you before you run short of money, and tells you wha
 
 We built Agam for the AI DEV FEST 2026 AI Hackathon (DIU CPC × upay), Track 03: Customer Innovation & Financial Independence. "Agam" means "in advance".
 
-**Live app:** `ADD-THE-LIVE-ADDRESS-HERE` (fill this in after deploying; see [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md))
+**Live app:** <https://agam-dtw9.onrender.com>
 
 **All data in this project is synthetic.** A program generated every customer and every transaction. No real customer data was used anywhere.
 
@@ -160,9 +160,9 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 ## 8. Live deployment
 
-**Live app:** `ADD-THE-LIVE-ADDRESS-HERE`
+**Live app:** <https://agam-dtw9.onrender.com>
 
-**Live API:** `ADD-THE-API-ADDRESS-HERE`
+**Live API:** <https://agam-api-suu9.onrender.com> (docs at [/docs](https://agam-api-suu9.onrender.com/docs))
 
 The API is on a free plan and sleeps when nobody visits. The first visit after a pause can take about a minute, and the page shows "Starting the server" while it waits.
 

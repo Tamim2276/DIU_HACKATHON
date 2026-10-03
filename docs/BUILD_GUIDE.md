@@ -73,7 +73,7 @@ Tick a step when its test passes and it is committed.
 **E. API:**
 
 - [x] 15. First endpoints: health, users, forecast
-- [ ] 16. Deploy the API (decided on 3 October: do this together with step 22, by midnight at the latest)
+- [x] 16. Deploy the API (decided on 3 October: do this together with step 22, by midnight at the latest)
 - [x] 17. What-if and model report endpoints
 
 **F. Explanation:**
@@ -85,7 +85,7 @@ Tick a step when its test passes and it is committed.
 
 - [x] 20. App skeleton connected to the API
 - [x] 21. Home screen
-- [ ] 22. Deploy the web app
+- [x] 22. Deploy the web app
 - [x] 23. Forecast screen
 - [x] 24. Actions screen
 - [x] 25. Ask screen
@@ -94,7 +94,7 @@ Tick a step when its test passes and it is committed.
 **H. Finish:**
 
 - [x] 27. Extras (optional): four of the five; voice input was left out
-- [ ] 28. README
+- [x] 28. README
 - [ ] 29. Clean clone test
 - [ ] 30. Report and video
 - [ ] 31. Submit
@@ -927,16 +927,16 @@ What the impact test found, for customers who kept to the safe amount on warned 
 
 `README.md` is written, with all ten items the rulebook requires. Two lines still say `ADD-THE-LIVE-ADDRESS-HERE` and `ADD-THE-API-ADDRESS-HERE`: fill them in after the deploy, then tick this step.
 
-- [ ] Project overview: the problem, the solution, the purpose
-- [ ] Features, and how the AI parts are used
-- [ ] Technology stack
-- [ ] Requirements: software and versions needed
-- [ ] Installation and setup, step by step
-- [ ] Environment variables: names, purpose, placeholder values only
-- [ ] Run and build commands, exact
-- [ ] Live deployment URL
-- [ ] Testing instructions
-- [ ] Other configuration
+- [x] Project overview: the problem, the solution, the purpose
+- [x] Features, and how the AI parts are used
+- [x] Technology stack
+- [x] Requirements: software and versions needed
+- [x] Installation and setup, step by step
+- [x] Environment variables: names, purpose, placeholder values only
+- [x] Run and build commands, exact
+- [x] Live deployment URL
+- [x] Testing instructions
+- [x] Other configuration
 
 Also state that all data is synthetic, and give the test results from step 9 including any weak spots.
 
