@@ -32,7 +32,7 @@ The idea is explained at more length, with this example worked through, in [docs
 | --- | --- | --- |
 | 30-day forecast | A chart of the expected balance with a range around it | Machine learning |
 | Shortfall warning | A warning when the chance of a shortfall reaches 40% within 14 days | A fixed rule applied to the forecast |
-| Safe to spend | A daily amount, with the sum behind it shown | A fixed formula |
+| Safe to spend | A daily amount that still lets every regular payment be made on time, with the sum behind it shown | A fixed formula, checked for every day until the next income |
 | Suggested actions | Up to three steps: keep to the safe amount, move a payment to after income, pay shops directly | Fixed rules |
 | What-if | Switch an action on and the forecast redraws | The same rules, run again |
 | Explanation | What will happen, why, and what to do, in Bangla or English | Fixed sentences |
@@ -176,7 +176,7 @@ From `backend` with the environment active:
 python -m pytest -q
 ```
 
-The last line should read `368 passed`. It takes about half a minute and needs no key and no internet.
+The last line should read `376 passed`. It takes about half a minute and needs no key and no internet.
 
 The tests cover the data generator, the model's inputs, the forecast, every rule (warning, regular payments, safe to spend, actions, savings goal), the explanation in both languages, the check on the language model's answers, the impact test and every API call. Two of them are worth knowing about:
 
@@ -261,18 +261,19 @@ For the 60 customers the model never saw, it is still better by 19% to 26%.
 
 | | Without Agam | Following the warnings |
 | --- | --- | --- |
-| Borrowed per customer | ৳1,049 | ৳426 |
-| Days with under a quarter of the day's need met | 6.3% | 4.1% |
-| Days with under half of the day's need met | 7.4% | 7.3% |
-| Share of wanted spending actually spent | 93.5% | 89.7% |
+| Borrowed per customer | ৳1,049 | ৳367 |
+| Days with under a quarter of the day's need met | 6.3% | 4.0% |
+| Days with under half of the day's need met | 7.4% | 7.7% |
+| Share of wanted spending actually spent | 93.5% | 88.9% |
 
-So following the warnings cut borrowing by about 60% and reduced the worst days, at the price of spending about 4 points less. The middle row did not change. The app does not create money; it swaps borrowing for spending less, earlier.
+So following the warnings cut borrowing by about 65% and reduced the worst days, at the price of spending about 5 points less. The third row did not improve; its small rise is within what chance alone gives (between 0.3 points down and 0.9 up). The app does not create money; it swaps borrowing for spending less, earlier.
 
 ### Where it is weak
 
 - Warnings are least reliable for small shop owners and ride-share riders, whose income arrives day by day (ranking quality 0.61 and 0.71, against 0.84 overall).
 - The range is too narrow for freelancers: it held the real balance 69% of the time instead of 80%.
 - The warning looks only at the forecast balance. A customer who pays a bill late keeps a higher balance, so a missed payment does not always raise a warning.
+- Safe to spend is often ৳0 for people paid day by day whose wallet is nearly empty: in a sample of July and August days, on 17% of rider days and 24% of shop-owner days. The number is honest, because a payment falls due before the money for it has come in, but the app then has no spending step to offer.
 - The amounts and probabilities in the synthetic data are our guesses. They were not fitted to real data.
 - The follow-up answers depend on a free language model plan that allows only a few questions a minute.
 

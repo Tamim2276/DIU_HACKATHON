@@ -18,7 +18,7 @@ from app.domain.services.actions import everyday_spending_per_day, suggest_actio
 from app.domain.services.income_pattern import IncomePattern, find_income_pattern, next_income_day
 from app.domain.services.regular_payments import find_regular_payments, upcoming_payments
 from app.domain.services.safe_to_spend import SafeToSpend, plan_safe_to_spend
-from app.domain.services.savings_goal import SavingsGoal, SavingsPlan, per_day, problem_with, set_aside
+from app.domain.services.savings_goal import SavingsGoal, SavingsPlan, per_day, problem_with
 from app.domain.services.shortfall import find_shortfall, safety_cushion
 
 
@@ -71,9 +71,9 @@ def assess(forecast: Forecast, history: list[Transaction], goal: SavingsGoal | N
         problem = problem_with(goal, as_of)
         if problem:
             raise InvalidGoalError(problem)
-        aside = set_aside(goal, as_of, plan.window_days)
-        savings = SavingsPlan(goal, round(per_day(goal, as_of), 2), round(aside, 2), plan.amount)
-        plan = plan_safe_to_spend(forecast, regular, due, income_day, savings=aside)
+        without_goal = plan.amount
+        plan = plan_safe_to_spend(forecast, regular, due, income_day, goal)
+        savings = SavingsPlan(goal, round(per_day(goal, as_of), 2), plan.savings, without_goal)
     cushion = safety_cushion(forecast)
     return Assessment(
         forecast=forecast,

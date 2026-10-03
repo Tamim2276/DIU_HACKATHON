@@ -266,8 +266,11 @@ code {
 
 /* ---------- screen ---------- */
 
+/* One column that is never wider than the screen. Without the minmax, a long chip or word inside a card
+   would stretch the column and the whole page would scroll sideways on a narrow phone. */
 .panel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   padding: 16px var(--gutter) 28px;
   min-width: 0;
@@ -275,6 +278,7 @@ code {
 
 .stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 16px;
   min-width: 0;
@@ -282,6 +286,7 @@ code {
 
 .home-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   transition: opacity 0.15s;
 }
@@ -314,6 +319,7 @@ code {
 
 .card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* what is inside wraps; it never pushes the card wider */
   align-content: start;
   gap: 6px;
   min-width: 0;
@@ -401,6 +407,11 @@ code {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.sum dd.wraps {
+  white-space: normal;
+  text-align: right;
 }
 
 .sum .total {
@@ -1029,6 +1040,7 @@ a {
 
 .actions-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -1586,7 +1598,7 @@ a {
 /* ---------- language switch in the header ---------- */
 
 .top .segmented button {
-  min-height: 34px;
+  min-height: 40px; /* tall enough for a thumb */
   padding: 0 12px;
   font-size: 0.86rem;
 }

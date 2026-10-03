@@ -15,7 +15,7 @@ def get_forecast(
     as_of: dt.date | None = Query(None, json_schema_extra={"example": "2026-08-12"},
                                   description="The day to treat as today, as YYYY-MM-DD. Only transactions up to "
                                               "this day are used. Leave empty for the demo day."),
-    goal_amount: float | None = Query(None, gt=0, description="A savings goal in taka. Send it together with "
+    goal_amount: float | None = Query(None, gt=0, allow_inf_nan=False, description="A savings goal in taka. Send it together with "
                                                                 "goal_date. It lowers the safe-to-spend amount."),
     goal_date: dt.date | None = Query(None, description="The day the savings goal should be reached, as YYYY-MM-DD."),
     use_case: GetForecast = Depends(get_forecast_use_case),

@@ -39,8 +39,8 @@ SENTENCES = {
         "balance_low": "Your balance is ৳{balance} today, below your safety cushion of ৳{cushion}, "
                        "but the forecast expects it to rise above that level again.",
         "safe": "You can spend about ৳{safe} a day until {until}.",
-        "safe_none": "Until {until} there is no money left over for everyday spending after your regular "
-                     "payments and safety cushion. Keep it as low as you can.",
+        "safe_none": "Until {until} there is no money left over for everyday spending once your regular payments "
+                     "are made on time and your safety cushion is kept. Keep it as low as you can.",
         # what is likely to happen
         "alert": "Your wallet may run short around {day}. The chance is about {chance}%.",
         "gap": "In a cautious estimate your balance falls about ৳{gap} below your safety cushion of ৳{cushion}.",
@@ -79,8 +79,8 @@ SENTENCES = {
         "balance_low": "আজ আপনার ব্যালেন্স ৳{balance}, যা নিরাপদ সীমার (৳{cushion}) নিচে। "
                        "তবে পূর্বাভাস অনুযায়ী এটি আবার সীমার উপরে উঠবে।",
         "safe": "{until} পর্যন্ত দিনে প্রায় ৳{safe} খরচ করতে পারেন।",
-        "safe_none": "নিয়মিত পেমেন্ট ও নিরাপদ সীমা বাদ দিলে {until} পর্যন্ত দৈনন্দিন খরচের জন্য কিছু থাকছে না। "
-                     "খরচ যতটা সম্ভব কম রাখুন।",
+        "safe_none": "নিয়মিত পেমেন্ট সময়মতো দিলে আর নিরাপদ সীমা ধরে রাখলে {until} পর্যন্ত দৈনন্দিন খরচের জন্য কিছু "
+                     "থাকছে না। খরচ যতটা সম্ভব কম রাখুন।",
         # what is likely to happen
         "alert": "{day} নাগাদ আপনার ওয়ালেটে টাকার টান পড়তে পারে। এর সম্ভাবনা প্রায় {chance}%।",
         "gap": "সাবধানী হিসাবে আপনার ব্যালেন্স নিরাপদ সীমার (৳{cushion}) চেয়ে প্রায় ৳{gap} নিচে নামতে পারে।",

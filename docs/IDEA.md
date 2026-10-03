@@ -55,6 +55,8 @@ Rafi does not do this sum. He sees ৳1,771 and feels fine. At ৳639 a day, tha
 
 ৳920 over 27 days is ৳34 a day. That is his safe-to-spend amount.
 
+Agam does this sum for every day until his next income, not only for the last one, and takes the smallest answer. So a payment that falls due early cannot hide behind money that arrives later. For Rafi the tightest day is the last one. For a rider with ৳1 in his wallet and ৳7,300 to send home in two days, the tightest day is the day that payment is due, and the answer is ৳0: the app does not pretend there is a safe amount when there is not.
+
 **5. It suggests a step and shows what it would change.** The step: keep everyday spending to ৳34 a day until 8 September. Rafi can switch it on and watch the forecast redraw. The chance of a shortfall falls from 45% to under 40%, and the warning goes away. He sees the result before he commits to anything.
 
 **6. It explains itself in Bangla.** The same message appears in Bangla or English: what is likely to happen, why, and what to do. If Rafi asks "আমার টাকা কেন কম পড়বে?" (why will I run short?), he gets a short answer built from his own figures.
@@ -92,12 +94,12 @@ The made-up data has five kinds of customer. On the same day, Agam says somethin
 | Customer | How they earn | What Agam says on 12 August |
 | --- | --- | --- |
 | Student | An allowance once a month | Warning for 23 August. One step removes it |
-| Rider | Paid per working day | Balance already low. The step lowers the risk from 75% to 63%, but the warning stays |
+| Rider | Paid per working day | Balance already low, 75% chance it stays so. Nothing is safe to spend, because ৳7,300 falls due in two days |
 | Garment worker | A salary once a month | All clear. Can spend ৳118 a day until payday |
 | Shop owner | Sales every day, a supplier to pay every week | Balance already low, 50% chance it stays so |
 | Freelancer | Paid at random times | No warning, but payments due are more than the money expected |
 
-Notice that the app does not always have good news. For the rider, it says plainly that the warning stays.
+Notice that the app does not always have good news. For the rider, it says plainly that the warning stays and that no amount is safe to spend.
 
 ## How we know it works, and what we do not know
 
@@ -105,7 +107,7 @@ We tested it on data it had never seen.
 
 - **The forecast beats simple methods.** Against three simple ways of guessing, such as "the same as last month", its error was 27% to 29% lower.
 - **The range is honest.** The range meant to hold the real balance 80% of the time held it 79% of the time.
-- **The advice helps, at a price.** We simulated 300 customers twice, once following the warnings and once not. Those who followed borrowed about 60% less. They also spent about 4% less of what they wanted, because the advice is to spend less on warned days.
+- **The advice helps, at a price.** We simulated 300 customers twice, once following the warnings and once not. Those who followed borrowed about 65% less. They also spent about 5% less of what they wanted, because the advice is to spend less on warned days.
 
 What we do not know:
 
@@ -124,7 +126,7 @@ The app shows these limits on its Model screen.
 | Safety cushion | The least a customer should keep: about one day of their usual spending |
 | Shortfall | The balance falling below the safety cushion |
 | Warning | Shown when the chance of a shortfall reaches 40% within 14 days |
-| Safe to spend | What the customer can spend each day and still reach their next income |
+| Safe to spend | What the customer can spend each day and still make every regular payment on time until their next income |
 | What-if | The forecast redrawn as if the customer had taken a suggested step |
 | Synthetic data | Data made by a program, describing no real person |
 

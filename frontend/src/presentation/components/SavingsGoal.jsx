@@ -12,7 +12,9 @@ export default function SavingsGoal({ forecast, selection, onChoose }) {
   const text = t.goal;
   const plan = forecast.savings_goal;
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(forecast.window_until);
+  // Until the customer picks a date, the goal runs to the end of their own safe-to-spend period.
+  const [picked, setPicked] = useState(null);
+  const date = picked ?? forecast.window_until;
   const [refused, setRefused] = useState(false);
 
   function set(event) {
@@ -63,7 +65,7 @@ export default function SavingsGoal({ forecast, selection, onChoose }) {
                 value={date}
                 min={addDays(selection.asOf, 1)}
                 max={addDays(selection.asOf, 365)}
-                onChange={(day) => isDay(day) && setDate(day)}
+                onChange={(day) => isDay(day) && setPicked(day)}
                 rounded
               />
             </div>

@@ -469,6 +469,8 @@ python -m pytest tests/unit -q
 
 **Commit:** `Add safe-to-spend rule`
 
+**Changed on 4 October.** The first version did the sum once, for the whole window. That averaged the money over the window and missed the order in which it comes and goes: a rider with ৳1 who earns every day was told ৳90 a day was safe, although ৳7,300 fell due in two days, before most of that income arrived. The formula now does the sum for every day of the window (income by that day, payments due by that day) and takes the smallest answer. The cushion is taken off on the last day. For customers with no income inside the window the answer is the same as before; in a sample of 1,125 customer-days, 80% of the numbers did not change, and none went up. The API sends the sum for the tightest day in `safe_to_spend_parts`, with its `date` and `days`.
+
 ### Step 14. Actions and what-if
 
 **Build:**
@@ -522,8 +524,9 @@ The forecast call returns this shape. Part G depends on it, so change both sides
   "window_days": 27,
   "window_until": "2026-09-08",
   "safe_to_spend_parts": {
-    "balance": 1771.4, "cautious_income": 4403.0, "payments_due": 4510.0,
-    "cushion": 744.6, "savings": 0.0, "left_over": 919.8
+    "date": "2026-09-08", "days": 27,
+    "balance": 1771.4, "cautious_income": 4402.72, "payments_due": 4510.0,
+    "cushion": 744.6, "savings": 0.0, "left_over": 919.52
   },
   "income": { "kind": "monthly", "usual_day": 8, "usual_amount": 13360.0, "next_day": "2026-09-08" },
   "alert": { "date": "2026-08-23", "probability": 0.4454, "gap": 678.66, "cushion": 744.6 },
@@ -672,7 +675,8 @@ uvicorn app.main:app --reload
 In `/docs`, `POST /users/{user_id}/explain`:
 
 - `U0121` with `{"as_of": "2026-08-12", "language": "bn"}`, then with `"language": "en"`: a warning for 23 August that the action removes.
-- `U0001`: the balance is already low, and the action lowers the chance from 75% to 63%.
+- `U0001`: the balance is already low and nothing is safe to spend. The only step is paying shops directly, which helps a little, and the warning stays at 75%.
+- `U0024`: the balance is already low, and the action lowers the chance from 65% to 50%.
 - `U0061`: the all-clear text.
 
 All the sentences are in one place: `SENTENCES` and `LABELS` in `template_explainer.py`. The Bangla ones sit under the English ones with the same names. Edit the wording there and keep the gaps in curly brackets, such as `{balance}`.
@@ -915,7 +919,7 @@ Two things were added that are not on this list:
 - **Bangla mode.** A switch in the header turns the whole web app into Bangla, with Bangla digits and dates. Every sentence is in `frontend/src/presentation/text/en.js` and `bn.js`, under the same names. Read the Bangla file and fix anything that sounds unnatural.
 - **Simpler wording.** The Home screen says things in plainer words, shows what the customer usually spends next to the safe amount, and tells a customer with no warning when their payments are still more than the money expected.
 
-What the impact test found, for customers who kept to the safe amount on warned days: borrowing fell from ৳1,049 to ৳426 per customer, days with under a quarter of the day's need met fell from 6.3% to 4.1%, days with under half did not change (7.4% against 7.3%), and they spent 89.7% of what they wanted against 93.5%. Report all four, not only the good ones.
+What the impact test found, for customers who kept to the safe amount on warned days: borrowing fell from ৳1,049 to ৳367 per customer, days with under a quarter of the day's need met fell from 6.3% to 4.0%, days with under half did not improve (7.4% against 7.7%, within the range of chance), and they spent 88.9% of what they wanted against 93.5%. Report all four, not only the good ones. These figures are from the run made on 4 October, after the safe-to-spend formula was changed to check every day (see step 13); the run before it gave ৳426, 4.1%, 7.3% and 89.7%.
 
 ### Step 28. README
 
@@ -986,6 +990,8 @@ Fix the README where you got stuck, commit, and delete `agam-check`.
 2. One user with an alert: Home, Forecast, Actions with an action switched on, Ask in Bangla.
 3. The Model report screen: how the model was tested and what it beat.
 4. Who benefits, and what would come next.
+
+The full script, shot by shot with what to click and what to say, is in `docs/DEMO_GUIDE.md` under "Recording the video". It also covers how to record on Windows, what to check, and how to upload.
 
 Check the organizers' announcement for the required file formats and where to submit.
 

@@ -81,6 +81,12 @@ def test_safe_to_spend_works_for_real_users_of_every_persona(cases):
         if pattern.kind != MONTHLY:
             assert plan.window_days == 14
         assert plan.cautious_income >= 0 and plan.payments_due >= 0 and plan.cushion > 0
+        # the tightest day decides, and it never allows more than the whole window would
+        tightest = plan.tightest
+        assert 1 <= tightest.days <= plan.window_days and tightest.day == TODAY + timedelta(days=tightest.days)
+        assert plan.amount == int(max(tightest.left_over / tightest.days, 0))
+        whole = plan.balance + plan.cautious_income - plan.payments_due - plan.cushion
+        assert plan.amount <= max(whole / plan.window_days, 0)
 
 
 def test_actions_on_real_users_only_ever_raise_the_forecast(cases):

@@ -48,11 +48,14 @@ class IncomeOut(BaseModel):
 
 
 class SafeToSpendPartsOut(BaseModel):
-    """The figures behind the safe-to-spend number: balance + income - payments - cushion - savings."""
+    """The sum behind the safe-to-spend number, on the day of the period that leaves the least to spend:
+    balance + income by that day - payments due by that day - cushion - savings."""
+    date: dt.date  # the tightest day
+    days: int  # from today to that day; left_over / days is the safe-to-spend amount
     balance: float
     cautious_income: float
     payments_due: float
-    cushion: float
+    cushion: float  # counted on the last day of the period, zero on a day before it
     savings: float
     left_over: float
 
@@ -98,7 +101,7 @@ class ForecastOut(BaseModel):
 
 def forecast_out(user: User, assessment: Assessment, actual: dict[dt.date, float]) -> ForecastOut:
     forecast, plan, alert, income = assessment.forecast, assessment.safe_to_spend, assessment.alert, assessment.income
-    savings = assessment.savings
+    savings, tightest = assessment.savings, plan.tightest
     return ForecastOut(
         user_id=user.user_id,
         persona=user.persona,
@@ -112,8 +115,9 @@ def forecast_out(user: User, assessment: Assessment, actual: dict[dt.date, float
         window_days=plan.window_days,
         window_until=plan.until,
         safe_to_spend_parts=SafeToSpendPartsOut(
-            balance=plan.balance, cautious_income=plan.cautious_income, payments_due=plan.payments_due,
-            cushion=plan.cushion, savings=plan.savings, left_over=round(plan.left_over, 2)),
+            date=tightest.day, days=tightest.days, balance=plan.balance, cautious_income=tightest.cautious_income,
+            payments_due=tightest.payments_due, cushion=tightest.cushion, savings=tightest.savings,
+            left_over=tightest.left_over),
         usual_everyday_spending=assessment.usual_spending,
         savings_goal=None if savings is None else SavingsGoalOut(
             amount=savings.goal.amount, date=savings.goal.by, per_day=savings.per_day, set_aside=savings.set_aside,
@@ -137,7 +141,7 @@ def result_out(result: ForecastResult) -> ForecastOut:
 class WhatIfIn(BaseModel):
     as_of: dt.date | None = None  # the day to treat as today; the demo day when left out
     actions: list[str] = []  # ids of suggested actions to switch on
-    goal_amount: float | None = Field(None, gt=0)  # a savings goal, sent with its date
+    goal_amount: float | None = Field(None, gt=0, allow_inf_nan=False)  # a savings goal, sent with its date
     goal_date: dt.date | None = None
 
     # What the docs page pre-fills, so "Try it out" works without editing. Use it with user U0121.

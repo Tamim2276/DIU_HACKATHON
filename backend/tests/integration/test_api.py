@@ -55,7 +55,11 @@ def test_forecast_has_the_agreed_shape(client):
         assert 0 <= point["p10"] <= point["p25"] <= point["p50"] <= point["p75"] <= point["p90"]
         assert point["actual"] is not None  # the data covers all 30 days after 12 August
     assert body["safe_to_spend"] >= 0 and body["window_days"] >= 1
-    assert set(body["safe_to_spend_parts"]) == {"balance", "cautious_income", "payments_due", "cushion", "savings", "left_over"}
+    assert set(body["safe_to_spend_parts"]) == {"date", "days", "balance", "cautious_income", "payments_due", "cushion",
+                                                "savings", "left_over"}
+    # for this student the last day of the period is the tightest one
+    assert body["safe_to_spend_parts"]["date"] == body["window_until"]
+    assert body["safe_to_spend_parts"]["days"] == body["window_days"]
     assert body["income"]["kind"] == "monthly" and body["income"]["next_day"] is not None
 
 
@@ -138,10 +142,22 @@ def test_what_if_with_no_actions_returns_the_plain_forecast(client):
 
 
 def test_what_if_can_leave_the_alert_in_place(client):
-    # this rider's wallet is already empty: the actions help a little, but the shortfall stays
-    body = client.post(WHAT_IF.format("U0001"), json={"as_of": "2026-08-12", "actions": ["keep_to_safe_spend"]}).json()
+    # this rider's wallet is nearly empty: keeping to the safe amount helps, but the shortfall stays
+    body = client.post(WHAT_IF.format("U0024"), json={"as_of": "2026-08-12", "actions": ["keep_to_safe_spend"]}).json()
     assert body["alert_before"] is not None and body["alert"] is not None
     assert body["alert"]["probability"] < body["alert_before"]["probability"]
+
+
+def test_a_payment_due_before_the_income_arrives_leaves_nothing_safe_to_spend(client):
+    # This rider has 1 taka, earns every day, and has 7,300 to send home in two days. Over the whole 14 days
+    # the money adds up to about 90 a day. By the day the payment is due it does not, so nothing is safe.
+    body = client.get(FORECAST.format("U0001"), params={"as_of": "2026-08-12"}).json()
+    parts = body["safe_to_spend_parts"]
+    assert body["safe_to_spend"] == 0.0 and body["window_days"] == 14
+    assert parts["date"] == "2026-08-14" and parts["days"] == 2 and parts["cushion"] == 0.0
+    assert parts["payments_due"] == 7300.0 and parts["left_over"] < 0
+    # with no safe amount there is nothing to keep to, so that action is not offered
+    assert "keep_to_safe_spend" not in [action["id"] for action in body["actions"]]
 
 
 def test_what_if_refuses_an_action_that_was_not_suggested(client):
@@ -211,8 +227,8 @@ def test_the_explanation_uses_the_same_figures_as_the_forecast_and_what_if_calls
 
 
 def test_an_alert_that_stays_is_explained_with_the_chance_that_remains(client):
-    facts = client.post(EXPLAIN.format("U0001"), json={"as_of": "2026-08-12", "language": "en"}).json()["facts"]
-    what_if = client.post(WHAT_IF.format("U0001"), json={"as_of": "2026-08-12", "actions": [facts["action_id"]]}).json()
+    facts = client.post(EXPLAIN.format("U0024"), json={"as_of": "2026-08-12", "language": "en"}).json()["facts"]
+    what_if = client.post(WHAT_IF.format("U0024"), json={"as_of": "2026-08-12", "actions": [facts["action_id"]]}).json()
     assert facts["under_cushion_now"] and facts["outcome"] == "lowers_chance"
     assert facts["chance_after"] == what_if["alert"]["probability"] < facts["alert_chance"]
 
@@ -340,6 +356,8 @@ def test_the_goal_reaches_the_actions_the_what_if_and_the_explanation(client):
     {"goal_amount": 0, "goal_date": "2026-09-08"},
     {"goal_amount": 2000, "goal_date": "2026-08-12"},  # today is too late
     {"goal_amount": 2000, "goal_date": "2028-01-01"},  # more than a year away
+    {"goal_amount": "inf", "goal_date": "2026-09-08"},  # not an amount anyone can save
+    {"goal_amount": "nan", "goal_date": "2026-09-08"},
 ])
 def test_a_goal_that_cannot_be_used_is_422_with_a_reason(client, goal):
     response = client.get(FORECAST.format("U0061"), params={"as_of": "2026-08-12", **goal})

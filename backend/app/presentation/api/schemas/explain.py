@@ -11,7 +11,7 @@ class ExplainIn(BaseModel):
     as_of: dt.date | None = None  # the day to treat as today; the demo day when left out
     language: Literal["bn", "en"] = "bn"  # Bangla or English
     question: str | None = Field(None, max_length=300)  # a follow-up question; left out, the standard explanation
-    goal_amount: float | None = Field(None, gt=0)  # a savings goal, sent with its date
+    goal_amount: float | None = Field(None, gt=0, allow_inf_nan=False)  # a savings goal, sent with its date
     goal_date: dt.date | None = None
 
     # What the docs page pre-fills, so "Try it out" works without editing. Use it with user U0121.

@@ -1,14 +1,18 @@
 // Which customer the app is showing, which day it treats as today, and the customer's savings goal.
-import { isDay } from "./format.js";
+import { daysBetween, isDay } from "./format.js";
+
+const LONGEST_GOAL_DAYS = 365; // the API refuses a goal further away than a year
 
 // The customer the app opens on: a student with a shortfall ahead that one action removes.
 const FIRST_CUSTOMER = "U0121";
 
-// A savings goal the API will accept for this day: an amount above zero and a later date. Otherwise none.
+// A savings goal the API will accept for this day: an amount above zero and a later date within a year.
+// Otherwise none.
 export function validGoal(goal, asOf) {
   const amount = Number(goal?.amount);
   const date = goal?.date ?? "";
-  return Number.isFinite(amount) && amount > 0 && isDay(date) && date > asOf ? { amount, date } : null;
+  const usable = Number.isFinite(amount) && amount > 0 && isDay(date) && date > asOf && daysBetween(asOf, date) <= LONGEST_GOAL_DAYS;
+  return usable ? { amount, date } : null;
 }
 
 // A selection the API will accept. Anything missing or out of range is replaced by the default.

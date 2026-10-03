@@ -29,7 +29,8 @@ const LANGUAGES = [
   { id: "en", name: "English" },
 ];
 
-// The part of the address after "#" remembers the tab, so reloading the page stays on the same screen.
+// The part of the address after "#" remembers the tab, so reloading the page stays on the same screen
+// and the browser's Back button returns to the screen before.
 function tabInAddress() {
   const id = window.location.hash.slice(1);
   return TABS.some((tab) => tab.id === id) ? id : TABS[0].id;
@@ -96,8 +97,8 @@ function Frame({ language, onLanguage }) {
   }, []);
 
   function goTo(id) {
+    if (id !== tabId) window.history.pushState(null, "", `#${id}`);
     setTabId(id);
-    window.history.replaceState(null, "", `#${id}`);
     window.scrollTo({ top: 0 });
   }
 

@@ -21,7 +21,7 @@ from app.domain.services.actions import (
     lowest_day,
     suggest_actions,
 )
-from app.domain.services.safe_to_spend import SafeToSpend
+from app.domain.services.safe_to_spend import DayCheck, SafeToSpend
 from app.domain.services.shortfall import find_shortfall
 
 TODAY = date(2026, 8, 12)
@@ -54,8 +54,10 @@ def history() -> list[Transaction]:
 
 
 def plan(amount: float = 200.0) -> SafeToSpend:
+    last_day = DayCheck(day=PAYDAY, days=12, cautious_income=0.0, payments_due=0.0, cushion=400.0, savings=0.0,
+                        left_over=3200.0)
     return SafeToSpend(amount=amount, window_days=12, until=PAYDAY, balance=3600.0, cautious_income=0.0,
-                       payments_due=0.0, cushion=400.0, savings=0.0)
+                       payments_due=0.0, cushion=400.0, savings=0.0, tightest=last_day)
 
 
 def suggest(**changes) -> dict[str, Action]:

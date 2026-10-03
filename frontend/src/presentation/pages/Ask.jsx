@@ -47,6 +47,7 @@ function Figures({ facts }) {
     facts.next_income_day && [
       names.income,
       names.incomeIn(f.fullDay(facts.next_income_day), t.days(f.number(facts.days_to_income))),
+      "wraps", // a day and a count of days: too long for one line on a narrow phone
     ],
     [names.payments, f.taka(facts.payments_due)],
     [names.usual, f.taka(facts.usual_spending)],
@@ -57,10 +58,10 @@ function Figures({ facts }) {
     <details className="how">
       <summary>{t.ask.figures}</summary>
       <dl className="sum">
-        {rows.map(([name, value]) => (
+        {rows.map(([name, value, look]) => (
           <div key={name}>
             <dt>{name}</dt>
-            <dd>{value}</dd>
+            <dd className={look}>{value}</dd>
           </div>
         ))}
       </dl>

@@ -69,7 +69,7 @@ Still in `backend`, with `(.venv)` showing:
 python -m pytest -q
 ```
 
-After about half a minute the last line should say `368 passed`.
+After about half a minute the last line should say `376 passed`.
 
 Then start the API:
 

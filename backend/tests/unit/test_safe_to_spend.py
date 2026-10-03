@@ -6,6 +6,7 @@ import pytest
 from app.domain.entities.forecast import Forecast, ForecastPoint
 from app.domain.entities.regular_payment import DuePayment, RegularPayment
 from app.domain.services.safe_to_spend import plan_safe_to_spend, safe_to_spend_per_day
+from app.domain.services.savings_goal import SavingsGoal
 
 TODAY = date(2026, 8, 12)
 
@@ -61,7 +62,9 @@ def test_with_a_payday_only_what_comes_before_it_is_counted():
     assert plan.payments_due == 2000.0
     assert plan.cushion == 600.0  # one day of typical spending
     assert plan.amount == 200.0  # (5,000 + 0 - 2,000 - 600) / 12
-    assert plan.left_over == 2400.0
+    # with no money coming in, the last day leaves the least to spend, and the cushion is kept on it
+    assert plan.tightest.day == payday and plan.tightest.days == 12
+    assert plan.tightest.cushion == 600.0 and plan.tightest.left_over == 2400.0
 
 
 def test_small_income_before_payday_is_counted():
@@ -112,10 +115,65 @@ def test_a_payday_beyond_the_forecast_plans_for_the_whole_forecast():
 def test_commitments_larger_than_the_money_give_zero_and_a_negative_left_over():
     plan = plan_safe_to_spend(make_forecast(balance=1000.0), [], [due(3, 2500)], TODAY + timedelta(days=10))
     assert plan.amount == 0.0
-    assert plan.left_over == -2100.0  # 1,000 - 2,500 - 600
+    assert plan.tightest.days == 3  # the day the payment is due
+    assert plan.tightest.left_over == -1500.0  # 1,000 - 2,500
 
 
-def test_cushion_and_savings_can_be_set():
-    plan = plan_safe_to_spend(make_forecast(), [], [], TODAY + timedelta(days=10), savings=1000.0, cushion=1500.0)
+def test_cushion_and_savings_goal_can_be_set():
+    goal = SavingsGoal(1000.0, TODAY + timedelta(days=10))
+    plan = plan_safe_to_spend(make_forecast(), [], [], TODAY + timedelta(days=10), goal, cushion=1500.0)
     assert plan.cushion == 1500.0 and plan.savings == 1000.0
     assert plan.amount == 250.0  # (5,000 - 1,500 - 1,000) / 10
+
+
+# ---------- every day of the window is checked ----------
+
+def test_a_payment_due_before_the_income_arrives_cannot_be_averaged_away():
+    # A rider with 100 taka who earns 900 a day and owes 7,300 the day after tomorrow.
+    # Over the whole 14 days the money adds up: (100 + 12,600 - 7,300 - 600) / 14 = 342 a day.
+    # But by day 2 only 1,800 has come in, so the payment cannot be made whatever is spent.
+    forecast = make_forecast({d: 900.0 for d in range(1, 31)}, balance=100.0)
+    plan = plan_safe_to_spend(forecast, [], [due(2, 7300)], income_day=None)
+    assert plan.amount == 0.0
+    assert plan.tightest.days == 2 and plan.tightest.day == TODAY + timedelta(days=2)
+    assert plan.tightest.cautious_income == 1800.0 and plan.tightest.payments_due == 7300.0
+    assert plan.tightest.left_over == -5400.0  # 100 + 1,800 - 7,300
+    # the figures for the whole window are kept, for the explanation
+    assert plan.window_days == 14 and plan.cautious_income == 12600.0 and plan.payments_due == 7300.0
+
+
+def test_the_day_before_money_arrives_can_be_the_tightest():
+    # 2,000 today, 1,600 due on day 4, and 6,000 arriving on day 10.
+    forecast = make_forecast({10: 6000.0}, balance=2000.0)
+    plan = plan_safe_to_spend(forecast, [], [due(4, 1600)], income_day=None)
+    # day 4: 400 / 4 = 100.  day 9: 400 / 9 = 44.  day 10: 6,400 / 10 = 640.  day 14: 5,800 / 14 = 414.
+    assert plan.amount == 44.0
+    assert plan.tightest.days == 9 and plan.tightest.left_over == 400.0
+
+
+def test_the_cushion_is_kept_on_the_last_day_only():
+    early = plan_safe_to_spend(make_forecast({10: 6000.0}, balance=2000.0), [], [due(4, 1600)], income_day=None)
+    assert early.tightest.days < early.window_days and early.tightest.cushion == 0.0
+    assert early.cushion == 600.0  # still reported, and still kept when the window ends
+    last = plan_safe_to_spend(make_forecast(), [], [], income_day=None)
+    assert last.tightest.days == last.window_days == 14 and last.tightest.cushion == 600.0
+    assert last.amount == 314.0  # (5,000 - 600) / 14
+
+
+def test_it_is_never_more_than_the_whole_window_allows():
+    for income, payments in [({d: 900.0 for d in range(1, 31)}, [due(2, 7300)]), ({10: 6000.0}, [due(4, 1600)]),
+                             ({}, [due(8, 2000)]), ({3: 500.0, 12: 800.0}, [due(1, 300), due(13, 4000)])]:
+        plan = plan_safe_to_spend(make_forecast(income), [], payments, income_day=None)
+        whole = safe_to_spend_per_day(plan.balance, plan.cautious_income, plan.payments_due, plan.cushion, 14)
+        assert plan.amount <= whole
+
+
+def test_savings_are_counted_day_by_day():
+    # 700 by day 7 is 100 a day for the first week and nothing after it
+    goal = SavingsGoal(700.0, TODAY + timedelta(days=7))
+    forecast = make_forecast({10: 6000.0}, balance=2000.0)
+    plan = plan_safe_to_spend(forecast, [], [due(4, 1600)], income_day=None, goal=goal)
+    assert plan.savings == 700.0
+    # day 4: (2,000 - 1,600 - 400) / 4 = 0.  day 7: (2,000 - 1,600 - 700) / 7 is below zero, so nothing is safe
+    assert plan.amount == 0.0 and plan.tightest.days == 7
+    assert plan.tightest.savings == 700.0 and plan.tightest.left_over == -300.0
