@@ -15,4 +15,6 @@ class MetaOut(BaseModel):
     last_day: dt.date  # the last day of data
     default_day: dt.date  # the "today" the app opens on
     horizon_days: int
+    warning_days: int  # how many days ahead a warning looks
+    alert_level: float  # a warning is given when the chance of a shortfall reaches this, 0 to 1
     data: str

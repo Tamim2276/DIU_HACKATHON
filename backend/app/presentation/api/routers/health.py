@@ -14,5 +14,5 @@ def health() -> dict:
 
 @router.get("/meta", response_model=MetaOut)
 def meta(values: dict = Depends(app_meta)) -> MetaOut:
-    """The days a forecast can be asked for, and the day the app opens on."""
+    """The days a forecast can be asked for, the day the app opens on, and the settings of the warning rule."""
     return MetaOut(**values)

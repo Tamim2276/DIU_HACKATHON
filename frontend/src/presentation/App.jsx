@@ -1,29 +1,41 @@
 import { useEffect, useState } from "react";
 
-import { CONNECTING, READY, useServer } from "../application/useServer.js";
+import { useForecast } from "../application/useForecast.js";
+import { useSelection } from "../application/useSelection.js";
+import { CONNECTING, READY as CONNECTED, useServer } from "../application/useServer.js";
 import ConnectionNotice from "./components/ConnectionNotice.jsx";
 import TabBar from "./components/TabBar.jsx";
+import Home from "./pages/Home.jsx";
 
 // The five screens. They are tabs inside one page, not separate addresses,
 // so a static host needs no extra rules to serve the app.
 const TABS = [
-  { id: "home", label: "Home", title: "Home", shows: "Balance, safe to spend today, and the alert or the all-clear." },
+  { id: "home", label: "Home", icon: "home", title: "Home", shows: "" },
   {
     id: "forecast",
     label: "Forecast",
+    icon: "forecast",
     title: "Forecast",
     shows: "The 30-day chart with its range and cushion line, and the regular payments coming up.",
   },
   {
     id: "actions",
     label: "Actions",
+    icon: "actions",
     title: "Actions",
     shows: "Suggested actions with switches. The chart updates as they are switched on and off.",
   },
-  { id: "ask", label: "Ask", title: "Ask", shows: "The explanation in Bangla or English, and a box for follow-up questions." },
+  {
+    id: "ask",
+    label: "Ask",
+    icon: "ask",
+    title: "Ask",
+    shows: "The explanation in Bangla or English, and a box for follow-up questions.",
+  },
   {
     id: "model",
     label: "Model",
+    icon: "model",
     title: "Model report",
     shows: "Test results against the simple baselines, the results per persona, and the assumptions behind the data.",
   },
@@ -40,13 +52,34 @@ function NotBuiltYet({ tab }) {
     <section className="card empty">
       <p className="label">Not built yet</p>
       <h1>{tab.title}</h1>
-      <p>{tab.shows}</p>
+      <p className="card-text">{tab.shows}</p>
     </section>
   );
 }
 
+// Everything below the tabs once the API has answered. The chosen customer and day, and the
+// forecast for them, are held here so that every screen shows the same customer.
+function Screens({ server, tab, goTo }) {
+  const [selection, choose] = useSelection(server.users, server.meta);
+  const forecastState = useForecast(selection.userId, selection.asOf);
+
+  if (tab.id === "home") {
+    return (
+      <Home
+        users={server.users}
+        meta={server.meta}
+        selection={selection}
+        onChoose={choose}
+        forecastState={forecastState}
+        goTo={goTo}
+      />
+    );
+  }
+  return <NotBuiltYet tab={tab} />;
+}
+
 function StatusLine({ server }) {
-  if (server.status === READY) {
+  if (server.status === CONNECTED) {
     return (
       <>
         <span className="dot ok" aria-hidden="true" />
@@ -73,9 +106,10 @@ export default function App() {
     return () => window.removeEventListener("hashchange", follow);
   }, []);
 
-  function choose(id) {
+  function goTo(id) {
     setTabId(id);
     window.history.replaceState(null, "", `#${id}`);
+    window.scrollTo({ top: 0 });
   }
 
   const tab = TABS.find((candidate) => candidate.id === tabId);
@@ -88,14 +122,19 @@ export default function App() {
             আগাম
           </span>
           <span className="brand-en">Agam</span>
+          <span className="tagline">See a shortfall before it happens</span>
         </div>
         {server.meta?.data === "synthetic" && <span className="tag">Synthetic data</span>}
       </header>
 
-      <TabBar tabs={TABS} current={tabId} onChoose={choose} />
+      <TabBar tabs={TABS} current={tabId} onChoose={goTo} />
 
       <main id="panel" className="panel" role="tabpanel" aria-labelledby={`tab-${tab.id}`}>
-        {server.status === READY ? <NotBuiltYet tab={tab} /> : <ConnectionNotice server={server} />}
+        {server.status === CONNECTED ? (
+          <Screens server={server} tab={tab} goTo={goTo} />
+        ) : (
+          <ConnectionNotice server={server} />
+        )}
       </main>
 
       <footer className="foot" role="status">

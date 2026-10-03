@@ -18,6 +18,7 @@ from app.application.use_cases.get_forecast import GetForecast
 from app.application.use_cases.get_metrics import GetMetrics
 from app.application.use_cases.list_users import ListUsers
 from app.application.use_cases.run_what_if import RunWhatIf
+from app.domain.services.shortfall import ALERT_CHANCE, WARNING_DAYS
 from app.infrastructure.config.settings import BACKEND_DIR, settings
 from app.infrastructure.llm.llm_explainer import DEFAULT_MODELS, LlmExplainer, gemini
 from app.infrastructure.llm.template_explainer import TemplateExplainer
@@ -65,6 +66,8 @@ def create_app() -> FastAPI:
         "last_day": repository.last_day(),
         "default_day": settings.demo_today,
         "horizon_days": settings.horizon_days,
+        "warning_days": WARNING_DAYS,
+        "alert_level": ALERT_CHANCE,
         "data": "synthetic",
     }
 

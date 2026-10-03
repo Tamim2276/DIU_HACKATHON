@@ -1,4 +1,7 @@
-// The row of screens. Left and right arrow keys move between tabs, as in any tab list.
+import Icon from "./Icon.jsx";
+
+// The row of screens: along the bottom on a phone, under the header on a wide screen.
+// Left and right arrow keys move between tabs, as in any tab list.
 export default function TabBar({ tabs, current, onChoose }) {
   function onKeyDown(event) {
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
@@ -25,6 +28,7 @@ export default function TabBar({ tabs, current, onChoose }) {
             tabIndex={tab.id === current ? 0 : -1}
             onClick={() => onChoose(tab.id)}
           >
+            <Icon name={tab.icon} size={20} />
             {tab.label}
           </button>
         ))}

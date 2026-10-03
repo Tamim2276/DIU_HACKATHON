@@ -84,7 +84,7 @@ Tick a step when its test passes and it is committed.
 **G. Web app:**
 
 - [x] 20. App skeleton connected to the API
-- [ ] 21. Home screen
+- [x] 21. Home screen
 - [ ] 22. Deploy the web app
 - [ ] 23. Forecast screen
 - [ ] 24. Actions screen
@@ -544,7 +544,7 @@ The forecast call returns this shape. Part G depends on it, so change both sides
 - `points` has 30 items. `actual` is the real balance on that day when the data has it, and `null` otherwise.
 - `income.kind` is `monthly`, `daily` or `irregular`. `usual_day`, `usual_amount` and `next_day` are `null` unless it is monthly.
 - `regular_payments` lists the payments due in the next 30 days.
-- `GET /meta` gives the days a forecast can be asked for and the day the app opens on.
+- `GET /meta` gives the days a forecast can be asked for, the day the app opens on, and the two settings of the warning rule: `warning_days` (14) and `alert_level` (0.4). The web app reads them from here and never hard-codes them.
 
 **Test:**
 
@@ -780,8 +780,20 @@ Open <http://localhost:5173>.
 
 **Build:**
 
-- `src/application/useForecast.js`: loads the forecast for the chosen user and date.
-- `src/presentation/pages/Home.jsx`, with `components/UserSwitcher.jsx`, `AlertCard.jsx` and `SafeToSpend.jsx`.
+- `src/application/useForecast.js`: loads the forecast for the chosen user and date. `useSelection.js` holds the chosen customer and day for every screen and keeps them across a reload.
+- `src/domain/`: plain functions with no React in them. `format.js` writes taka, percentages and dates; `status.js` names the four situations a customer can be in; `selection.js` checks the chosen customer and day; `labels.js` holds the names of personas and payments.
+- `src/presentation/pages/Home.jsx`, with `components/UserSwitcher.jsx`, `AlertCard.jsx`, `SafeToSpend.jsx`, `BalanceCard.jsx`, `ComingUp.jsx` and `Icon.jsx`.
+- `styles.css`: the colours, type and spacing every screen uses. On a phone the five screens are a bar along the bottom; from 720 px they are a row under the header; from 900 px the Home screen has two columns.
+- Backend: `GET /meta` gains `warning_days` and `alert_level`.
+
+The Home screen shows four situations. Each has a customer to try on the demo day:
+
+| Situation | Customer |
+| --- | --- |
+| Shortfall warning, balance still above the cushion | Student `U0121` |
+| Shortfall warning, balance already low | Rider `U0001` |
+| No warning | Garment worker `U0061` |
+| Low today but no warning | Freelancer `U0241` |
 
 **Test:**
 

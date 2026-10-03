@@ -28,7 +28,8 @@ def test_health(client):
 
 def test_meta_gives_the_days_a_forecast_can_be_asked_for(client):
     assert client.get("/meta").json() == {"first_day": "2026-01-04", "last_day": "2026-09-30",
-                                          "default_day": "2026-08-12", "horizon_days": 30, "data": "synthetic"}
+                                          "default_day": "2026-08-12", "horizon_days": 30, "warning_days": 14,
+                                          "alert_level": 0.4, "data": "synthetic"}
 
 
 def test_users_lists_all_300_with_their_persona(client):
