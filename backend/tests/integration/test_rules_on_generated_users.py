@@ -12,7 +12,9 @@ import pytest
 
 from app.domain.services.income_pattern import DAILY, IRREGULAR, MONTHLY, find_income_pattern, next_income_day
 from app.domain.services.regular_payments import find_regular_payments, upcoming_payments
+from app.domain.services.safe_to_spend import plan_safe_to_spend
 from app.infrastructure.config.settings import settings
+from app.infrastructure.ml.quantile_forecaster import QuantileForecaster
 from app.infrastructure.repositories.csv_transaction_repository import CsvTransactionRepository
 
 TODAY = date(2026, 8, 12)
@@ -62,6 +64,22 @@ def test_income_pattern_matches_how_each_persona_is_paid(cases):
 def test_garment_salary_day_is_found_near_the_8th(cases):
     days = [find_income_pattern(t, TODAY).usual_day for persona, t, _ in cases if persona == "garment"]
     assert sum(6 <= day <= 12 for day in days) >= 57  # of 60
+
+
+def test_safe_to_spend_works_for_real_users_of_every_persona(cases):
+    forecaster = QuantileForecaster(settings.model_dir)
+    for _, transactions, _ in cases[::5]:
+        regular = find_regular_payments(transactions, TODAY)
+        pattern = find_income_pattern(transactions, TODAY)
+        plan = plan_safe_to_spend(forecaster.forecast(transactions, TODAY), regular,
+                                  upcoming_payments(regular, transactions, TODAY),
+                                  next_income_day(pattern, transactions, TODAY))
+        assert plan.amount >= 0 and plan.amount == int(plan.amount)
+        assert 1 <= plan.window_days <= settings.horizon_days
+        assert plan.until == TODAY + timedelta(days=plan.window_days)
+        if pattern.kind != MONTHLY:
+            assert plan.window_days == 14
+        assert plan.cautious_income >= 0 and plan.payments_due >= 0 and plan.cushion > 0
 
 
 def test_upcoming_payments_and_next_income_day_are_in_the_future(cases):
