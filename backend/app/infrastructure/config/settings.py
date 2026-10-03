@@ -29,6 +29,8 @@ class Settings:
     train_end: date = date(2026, 6, 30)
     test_start: date = date(2026, 7, 1)
     test_end: date = date(2026, 8, 31)
+    # Every fifth user is kept out of training, to test on users the model never saw.
+    holdout_every: int = 5
 
 
 settings = Settings()
