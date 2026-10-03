@@ -5,40 +5,20 @@ import { useSelection } from "../application/useSelection.js";
 import { CONNECTING, READY as CONNECTED, useServer } from "../application/useServer.js";
 import ConnectionNotice from "./components/ConnectionNotice.jsx";
 import TabBar from "./components/TabBar.jsx";
+import Actions from "./pages/Actions.jsx";
+import Ask from "./pages/Ask.jsx";
+import Forecast from "./pages/Forecast.jsx";
 import Home from "./pages/Home.jsx";
+import ModelReport from "./pages/ModelReport.jsx";
 
 // The five screens. They are tabs inside one page, not separate addresses,
 // so a static host needs no extra rules to serve the app.
 const TABS = [
-  { id: "home", label: "Home", icon: "home", title: "Home", shows: "" },
-  {
-    id: "forecast",
-    label: "Forecast",
-    icon: "forecast",
-    title: "Forecast",
-    shows: "The 30-day chart with its range and cushion line, and the regular payments coming up.",
-  },
-  {
-    id: "actions",
-    label: "Actions",
-    icon: "actions",
-    title: "Actions",
-    shows: "Suggested actions with switches. The chart updates as they are switched on and off.",
-  },
-  {
-    id: "ask",
-    label: "Ask",
-    icon: "ask",
-    title: "Ask",
-    shows: "The explanation in Bangla or English, and a box for follow-up questions.",
-  },
-  {
-    id: "model",
-    label: "Model",
-    icon: "model",
-    title: "Model report",
-    shows: "Test results against the simple baselines, the results per persona, and the assumptions behind the data.",
-  },
+  { id: "home", label: "Home", icon: "home" },
+  { id: "forecast", label: "Forecast", icon: "forecast" },
+  { id: "actions", label: "Actions", icon: "actions" },
+  { id: "ask", label: "Ask", icon: "ask" },
+  { id: "model", label: "Model", icon: "model" },
 ];
 
 // The part of the address after "#" remembers the tab, so reloading the page stays on the same screen.
@@ -47,35 +27,34 @@ function tabInAddress() {
   return TABS.some((tab) => tab.id === id) ? id : TABS[0].id;
 }
 
-function NotBuiltYet({ tab }) {
-  return (
-    <section className="card empty">
-      <p className="label">Not built yet</p>
-      <h1>{tab.title}</h1>
-      <p className="card-text">{tab.shows}</p>
-    </section>
-  );
-}
-
 // Everything below the tabs once the API has answered. The chosen customer and day, and the
 // forecast for them, are held here so that every screen shows the same customer.
 function Screens({ server, tab, goTo }) {
-  const [selection, choose] = useSelection(server.users, server.meta);
+  const { users, meta } = server;
+  const [selection, choose] = useSelection(users, meta);
   const forecastState = useForecast(selection.userId, selection.asOf);
+  const [language, setLanguage] = useState("bn"); // the Ask screen opens in Bangla
 
-  if (tab.id === "home") {
-    return (
-      <Home
-        users={server.users}
-        meta={server.meta}
-        selection={selection}
-        onChoose={choose}
-        forecastState={forecastState}
-        goTo={goTo}
-      />
-    );
+  // The actions switched on, for this customer and day only: another customer starts with none.
+  const view = `${selection.userId}|${selection.asOf}`;
+  const [switched, setSwitched] = useState({ view, ids: [] });
+  const actionIds = switched.view === view ? switched.ids : [];
+  const toggleAction = (id) =>
+    setSwitched({ view, ids: actionIds.includes(id) ? actionIds.filter((other) => other !== id) : [...actionIds, id] });
+
+  const shared = { users, meta, selection, forecastState, goTo };
+  switch (tab.id) {
+    case "home":
+      return <Home {...shared} onChoose={choose} />;
+    case "forecast":
+      return <Forecast {...shared} />;
+    case "actions":
+      return <Actions {...shared} actionIds={actionIds} onToggle={toggleAction} />;
+    case "ask":
+      return <Ask users={users} selection={selection} language={language} onLanguage={setLanguage} goTo={goTo} />;
+    default:
+      return <ModelReport meta={meta} />;
   }
-  return <NotBuiltYet tab={tab} />;
 }
 
 function StatusLine({ server }) {

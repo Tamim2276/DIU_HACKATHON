@@ -29,6 +29,15 @@ const PAYMENTS = {
   transport: "Transport",
 };
 
+const ACTIONS = {
+  keep_to_safe_spend: "Keep to the safe amount",
+  move_payment: "Move a payment",
+  pay_directly: "Pay shops directly",
+};
+
+// A short name for a suggested action. The API's own sentence says the rest.
+export const actionName = (id) => ACTIONS[id] ?? "Suggested action";
+
 // "house_rent" -> "House rent". An unknown label is shown as it is, with spaces.
 export function paymentName(label) {
   if (PAYMENTS[label]) return PAYMENTS[label];

@@ -8,4 +8,6 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173, strictPort: true },
   preview: { port: 5173, strictPort: true },
+  // The chart library makes the app one large file. That is fine for a single page; this only quiets the notice.
+  build: { chunkSizeWarningLimit: 800 },
 });

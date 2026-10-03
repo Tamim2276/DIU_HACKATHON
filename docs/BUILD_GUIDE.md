@@ -86,10 +86,10 @@ Tick a step when its test passes and it is committed.
 - [x] 20. App skeleton connected to the API
 - [x] 21. Home screen
 - [ ] 22. Deploy the web app
-- [ ] 23. Forecast screen
-- [ ] 24. Actions screen
-- [ ] 25. Ask screen
-- [ ] 26. Model report screen
+- [x] 23. Forecast screen
+- [x] 24. Actions screen
+- [x] 25. Ask screen
+- [x] 26. Model report screen
 
 **H. Finish:**
 
@@ -829,7 +829,10 @@ Open the site address on your phone and in a private browser window.
 
 **Build:**
 
-- `src/presentation/pages/Forecast.jsx`, with `components/ForecastChart.jsx` (the P50 line, the P10 to P90 band and the cushion line) and `RegularPayments.jsx`.
+- `src/presentation/pages/Forecast.jsx`, with `components/ForecastChart.jsx` (the P50 line, the P10 to P90 band, the narrower P25 to P75 band and the cushion line) and `RegularPayments.jsx`.
+- `src/domain/forecastSeries.js`: turns the forecast into the rows the chart draws.
+- `components/ContextBar.jsx`: on every screen except Home, says whose figures are shown and leads back to Home to change that.
+- A tick box, "Show what really happened", draws the real balance over the forecast. It is for the demo only: the days after "today" exist in the synthetic data, and the forecast never sees them.
 
 **Test:**
 
@@ -847,6 +850,8 @@ Open the site address on your phone and in a private browser window.
 **Build:**
 
 - `src/application/useWhatIf.js` and `src/presentation/pages/Actions.jsx`: a switch for each action. Switching calls the what-if endpoint.
+- A card shows the chance of a shortfall and the lowest likely balance, now and with the action. The chart draws the forecast without the action as a dashed line.
+- The switches are remembered while you visit other screens, and reset when the customer or the day changes.
 
 **Test:**
 
@@ -863,8 +868,9 @@ Pick a user with an alert.
 
 **Build:**
 
-- `src/presentation/pages/Ask.jsx`: the explanation text and a Bangla or English switch.
-- If step 19 is done and there is time: a box for a follow-up question.
+- `src/application/useExplanation.js` and `src/presentation/pages/Ask.jsx`: the explanation text and a Bangla or English switch. It opens in Bangla.
+- "The figures this text was built from" folds out the facts the API sent with the text.
+- A box for a follow-up question, with three suggested questions in the chosen language. An answer from the language model is marked as such. When the model cannot give a checked answer, the screen says so and points back to the explanation.
 
 **Test:**
 
@@ -879,7 +885,8 @@ Pick a user with an alert.
 
 **Build:**
 
-- `src/presentation/pages/ModelReport.jsx`: the model against the three baselines, the results per persona, the list of synthetic assumptions, and one sentence saying that all results come from synthetic data.
+- `src/application/useMetrics.js` and `src/presentation/pages/ModelReport.jsx`: the model against the three baselines (a chart and a table), how honest the range is, the early warnings at each alert level, the results per persona with the weak spots marked, the synthetic assumptions, the limits, and a note that all results come from synthetic data.
+- `src/domain/assumptions.js`: the assumptions and limits, written by hand from `docs/SYNTHETIC_DATA.md`. If the generator changes, change them too.
 
 **Test:**
 
