@@ -288,4 +288,5 @@ The assumptions behind the data are listed in full in [docs/SYNTHETIC_DATA.md](d
 | [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md) | Putting it on the internet |
 | [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md) | Showing it to the judges |
 | [docs/BUILD_GUIDE.md](docs/BUILD_GUIDE.md) | How it was built, step by step |
+| [docs/PHASE2_BUILD_GUIDE.md](docs/PHASE2_BUILD_GUIDE.md) | What we built during the on-site update window, and why |
 | [docs/SYNTHETIC_DATA.md](docs/SYNTHETIC_DATA.md) | Every assumption behind the data |
