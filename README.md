@@ -257,6 +257,16 @@ For the 60 customers the model never saw, it is still better by 19% to 26%.
 
 **Warnings.** At the 40% level used in the app, the warning caught 52% of real shortfalls, 63% of warnings were right, and 11% of safe periods got a false alarm.
 
+**Is that good? Against a simple rule.** We compared the warning with the simplest alternative: "the 3-month average says the balance goes under the cushion." The same comparison is on the Model tab of the live app, in the "Early warnings" section, next to "Simple rule: the 3-month average."
+
+| Rule | Ranking quality (AUC) | Caught | Right | False alarms |
+| --- | --- | --- | --- | --- |
+| Simple rule: 3-month average under the cushion | 0.783 | 62.1% | 47.1% | 25.1% |
+| Model, tuned to the same false-alarm rate | — | 73.3% | 51.2% | 25.1% |
+| Model, at the 40% level used in the app | 0.836 | 51.7% | 63.3% | 10.8% |
+
+Read the last row against the first: at its chosen setting the model trades some catch rate for far fewer false alarms (11% against 25%) and clearly better precision (63% against 47%). Given the same number of false alarms as the simple rule, the model catches more real shortfalls (73% against 62%). That trade-off, not a raw "better" or "worse", is the honest answer to whether 52%/63% is good.
+
 **Following the advice.** We simulated the same 300 customers twice over July and August: once as they were, and once keeping to the safe-to-spend amount on warned days.
 
 | | Without Agam | Following the warnings |
