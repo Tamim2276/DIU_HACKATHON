@@ -1,0 +1,508 @@
+{
+  "about": {
+    "data": "synthetic; see docs/SYNTHETIC_DATA.md",
+    "period": {
+      "from": "2026-07-01",
+      "to": "2026-08-31"
+    },
+    "customers": 300,
+    "days_each": 62,
+    "least_share_of_need": 0.5,
+    "hard_day": "a day on which less than half of what the customer needed was paid for, by choice or not",
+    "very_hard_day": "a day on which less than a quarter of what the customer needed could be paid for"
+  },
+  "runs": {
+    "without": {
+      "very_hard_days": 0.0627,
+      "hard_days": 0.074,
+      "days_short_of_plan": 0.0853,
+      "spending_met": 0.9354,
+      "customers_who_borrowed": 0.4067,
+      "borrowed_per_customer": 1049,
+      "days_with_a_payment_overdue": 0.1826,
+      "payments_given_up_per_100_customers": 74.0,
+      "days_warned": 0.0,
+      "days_advice_changed_spending": 0.0
+    },
+    "25% adoption": {
+      "very_hard_days": 0.0591,
+      "hard_days": 0.0758,
+      "days_short_of_plan": 0.0792,
+      "spending_met": 0.9257,
+      "customers_who_borrowed": 0.3767,
+      "borrowed_per_customer": 890,
+      "days_with_a_payment_overdue": 0.1781,
+      "payments_given_up_per_100_customers": 71.0,
+      "days_warned": 0.0452,
+      "days_advice_changed_spending": 0.0367
+    },
+    "50% adoption": {
+      "very_hard_days": 0.055,
+      "hard_days": 0.077,
+      "days_short_of_plan": 0.0726,
+      "spending_met": 0.916,
+      "customers_who_borrowed": 0.37,
+      "borrowed_per_customer": 774,
+      "days_with_a_payment_overdue": 0.1737,
+      "payments_given_up_per_100_customers": 69.3,
+      "days_warned": 0.0968,
+      "days_advice_changed_spending": 0.0834
+    },
+    "75% adoption": {
+      "very_hard_days": 0.0484,
+      "hard_days": 0.0777,
+      "days_short_of_plan": 0.0628,
+      "spending_met": 0.9005,
+      "customers_who_borrowed": 0.3433,
+      "borrowed_per_customer": 557,
+      "days_with_a_payment_overdue": 0.1729,
+      "payments_given_up_per_100_customers": 69.0,
+      "days_warned": 0.1664,
+      "days_advice_changed_spending": 0.1468
+    },
+    "100% adoption": {
+      "very_hard_days": 0.0405,
+      "hard_days": 0.0769,
+      "days_short_of_plan": 0.0504,
+      "spending_met": 0.8895,
+      "customers_who_borrowed": 0.31,
+      "borrowed_per_customer": 367,
+      "days_with_a_payment_overdue": 0.1709,
+      "payments_given_up_per_100_customers": 65.0,
+      "days_warned": 0.2365,
+      "days_advice_changed_spending": 0.2085
+    }
+  },
+  "changes": {
+    "25% adoption": {
+      "very_hard_days": {
+        "change": -0.0035,
+        "low": -0.0059,
+        "high": -0.0017
+      },
+      "hard_days": {
+        "change": 0.0017,
+        "low": -0.0008,
+        "high": 0.0044
+      },
+      "spending_met": {
+        "change": -0.0096,
+        "low": -0.0133,
+        "high": -0.0061
+      },
+      "borrowed_per_customer": {
+        "change": -158.6667,
+        "low": -242.35,
+        "high": -86.0
+      },
+      "days_with_a_payment_overdue": {
+        "change": -0.0045,
+        "low": -0.0103,
+        "high": 0.0006
+      }
+    },
+    "50% adoption": {
+      "very_hard_days": {
+        "change": -0.0077,
+        "low": -0.0114,
+        "high": -0.0043
+      },
+      "hard_days": {
+        "change": 0.003,
+        "low": -0.0006,
+        "high": 0.0066
+      },
+      "spending_met": {
+        "change": -0.021,
+        "low": -0.0266,
+        "high": -0.016
+      },
+      "borrowed_per_customer": {
+        "change": -274.3333,
+        "low": -388.3417,
+        "high": -174.6583
+      },
+      "days_with_a_payment_overdue": {
+        "change": -0.0089,
+        "low": -0.0166,
+        "high": -0.0016
+      }
+    },
+    "75% adoption": {
+      "very_hard_days": {
+        "change": -0.0142,
+        "low": -0.0192,
+        "high": -0.0098
+      },
+      "hard_days": {
+        "change": 0.0037,
+        "low": -0.0011,
+        "high": 0.0085
+      },
+      "spending_met": {
+        "change": -0.0374,
+        "low": -0.0447,
+        "high": -0.0309
+      },
+      "borrowed_per_customer": {
+        "change": -491.3333,
+        "low": -641.675,
+        "high": -353.325
+      },
+      "days_with_a_payment_overdue": {
+        "change": -0.0097,
+        "low": -0.0189,
+        "high": -0.0006
+      }
+    },
+    "100% adoption": {
+      "very_hard_days": {
+        "change": -0.0222,
+        "low": -0.0282,
+        "high": -0.0162
+      },
+      "hard_days": {
+        "change": 0.0029,
+        "low": -0.0031,
+        "high": 0.0091
+      },
+      "spending_met": {
+        "change": -0.0494,
+        "low": -0.0571,
+        "high": -0.0426
+      },
+      "borrowed_per_customer": {
+        "change": -682.0,
+        "low": -847.1083,
+        "high": -523.325
+      },
+      "days_with_a_payment_overdue": {
+        "change": -0.0117,
+        "low": -0.0216,
+        "high": -0.0017
+      }
+    }
+  },
+  "by_persona": [
+    {
+      "persona": "rider",
+      "label": "Ride-share rider",
+      "without": {
+        "very_hard_days": 0.0094,
+        "hard_days": 0.0148,
+        "days_short_of_plan": 0.0296,
+        "spending_met": 0.9963,
+        "customers_who_borrowed": 0.2,
+        "borrowed_per_customer": 340,
+        "days_with_a_payment_overdue": 0.2672,
+        "payments_given_up_per_100_customers": 150.0,
+        "days_warned": 0.0,
+        "days_advice_changed_spending": 0.0
+      },
+      "25% adoption": {
+        "very_hard_days": 0.0089,
+        "hard_days": 0.0185,
+        "days_short_of_plan": 0.0261,
+        "spending_met": 0.9843,
+        "customers_who_borrowed": 0.15,
+        "borrowed_per_customer": 285,
+        "days_with_a_payment_overdue": 0.2575,
+        "payments_given_up_per_100_customers": 143.3,
+        "days_warned": 0.064,
+        "days_advice_changed_spending": 0.0331
+      },
+      "50% adoption": {
+        "very_hard_days": 0.0075,
+        "hard_days": 0.0202,
+        "days_short_of_plan": 0.0234,
+        "spending_met": 0.9736,
+        "customers_who_borrowed": 0.1333,
+        "borrowed_per_customer": 227,
+        "days_with_a_payment_overdue": 0.2452,
+        "payments_given_up_per_100_customers": 135.0,
+        "days_warned": 0.1142,
+        "days_advice_changed_spending": 0.0651
+      },
+      "75% adoption": {
+        "very_hard_days": 0.0078,
+        "hard_days": 0.0234,
+        "days_short_of_plan": 0.0242,
+        "spending_met": 0.9657,
+        "customers_who_borrowed": 0.15,
+        "borrowed_per_customer": 237,
+        "days_with_a_payment_overdue": 0.2503,
+        "payments_given_up_per_100_customers": 136.7,
+        "days_warned": 0.1543,
+        "days_advice_changed_spending": 0.0858
+      },
+      "100% adoption": {
+        "very_hard_days": 0.011,
+        "hard_days": 0.0333,
+        "days_short_of_plan": 0.0258,
+        "spending_met": 0.9434,
+        "customers_who_borrowed": 0.15,
+        "borrowed_per_customer": 222,
+        "days_with_a_payment_overdue": 0.2398,
+        "payments_given_up_per_100_customers": 120.0,
+        "days_warned": 0.2344,
+        "days_advice_changed_spending": 0.1344
+      }
+    },
+    {
+      "persona": "garment",
+      "label": "Garment worker",
+      "without": {
+        "very_hard_days": 0.0374,
+        "hard_days": 0.0419,
+        "days_short_of_plan": 0.0508,
+        "spending_met": 0.9837,
+        "customers_who_borrowed": 0.3167,
+        "borrowed_per_customer": 560,
+        "days_with_a_payment_overdue": 0.0349,
+        "payments_given_up_per_100_customers": 8.3,
+        "days_warned": 0.0,
+        "days_advice_changed_spending": 0.0
+      },
+      "25% adoption": {
+        "very_hard_days": 0.0368,
+        "hard_days": 0.0462,
+        "days_short_of_plan": 0.0473,
+        "spending_met": 0.9696,
+        "customers_who_borrowed": 0.3167,
+        "borrowed_per_customer": 452,
+        "days_with_a_payment_overdue": 0.0323,
+        "payments_given_up_per_100_customers": 8.3,
+        "days_warned": 0.0433,
+        "days_advice_changed_spending": 0.0395
+      },
+      "50% adoption": {
+        "very_hard_days": 0.0301,
+        "hard_days": 0.0465,
+        "days_short_of_plan": 0.0406,
+        "spending_met": 0.9603,
+        "customers_who_borrowed": 0.3333,
+        "borrowed_per_customer": 420,
+        "days_with_a_payment_overdue": 0.032,
+        "payments_given_up_per_100_customers": 8.3,
+        "days_warned": 0.086,
+        "days_advice_changed_spending": 0.0806
+      },
+      "75% adoption": {
+        "very_hard_days": 0.0234,
+        "hard_days": 0.0473,
+        "days_short_of_plan": 0.0315,
+        "spending_met": 0.9432,
+        "customers_who_borrowed": 0.2833,
+        "borrowed_per_customer": 358,
+        "days_with_a_payment_overdue": 0.0282,
+        "payments_given_up_per_100_customers": 5.0,
+        "days_warned": 0.1368,
+        "days_advice_changed_spending": 0.1304
+      },
+      "100% adoption": {
+        "very_hard_days": 0.0129,
+        "hard_days": 0.0444,
+        "days_short_of_plan": 0.0196,
+        "spending_met": 0.9329,
+        "customers_who_borrowed": 0.2167,
+        "borrowed_per_customer": 252,
+        "days_with_a_payment_overdue": 0.025,
+        "payments_given_up_per_100_customers": 5.0,
+        "days_warned": 0.1879,
+        "days_advice_changed_spending": 0.178
+      }
+    },
+    {
+      "persona": "student",
+      "label": "University student",
+      "without": {
+        "very_hard_days": 0.1137,
+        "hard_days": 0.1503,
+        "days_short_of_plan": 0.1645,
+        "spending_met": 0.8638,
+        "customers_who_borrowed": 0.85,
+        "borrowed_per_customer": 2337,
+        "days_with_a_payment_overdue": 0.0669,
+        "payments_given_up_per_100_customers": 16.7,
+        "days_warned": 0.0,
+        "days_advice_changed_spending": 0.0
+      },
+      "25% adoption": {
+        "very_hard_days": 0.1081,
+        "hard_days": 0.1497,
+        "days_short_of_plan": 0.1562,
+        "spending_met": 0.8571,
+        "customers_who_borrowed": 0.8167,
+        "borrowed_per_customer": 2140,
+        "days_with_a_payment_overdue": 0.0688,
+        "payments_given_up_per_100_customers": 18.3,
+        "days_warned": 0.0325,
+        "days_advice_changed_spending": 0.0306
+      },
+      "50% adoption": {
+        "very_hard_days": 0.1,
+        "hard_days": 0.1473,
+        "days_short_of_plan": 0.1379,
+        "spending_met": 0.8376,
+        "customers_who_borrowed": 0.7833,
+        "borrowed_per_customer": 1827,
+        "days_with_a_payment_overdue": 0.0707,
+        "payments_given_up_per_100_customers": 18.3,
+        "days_warned": 0.1306,
+        "days_advice_changed_spending": 0.1272
+      },
+      "75% adoption": {
+        "very_hard_days": 0.0785,
+        "hard_days": 0.1414,
+        "days_short_of_plan": 0.1013,
+        "spending_met": 0.7922,
+        "customers_who_borrowed": 0.6833,
+        "borrowed_per_customer": 925,
+        "days_with_a_payment_overdue": 0.0667,
+        "payments_given_up_per_100_customers": 15.0,
+        "days_warned": 0.3094,
+        "days_advice_changed_spending": 0.3016
+      },
+      "100% adoption": {
+        "very_hard_days": 0.0548,
+        "hard_days": 0.1277,
+        "days_short_of_plan": 0.0642,
+        "spending_met": 0.7785,
+        "customers_who_borrowed": 0.5833,
+        "borrowed_per_customer": 487,
+        "days_with_a_payment_overdue": 0.0672,
+        "payments_given_up_per_100_customers": 16.7,
+        "days_warned": 0.4374,
+        "days_advice_changed_spending": 0.4277
+      }
+    },
+    {
+      "persona": "shopkeeper",
+      "label": "Small shop owner",
+      "without": {
+        "very_hard_days": 0.0056,
+        "hard_days": 0.0099,
+        "days_short_of_plan": 0.0204,
+        "spending_met": 0.9973,
+        "customers_who_borrowed": 0.15,
+        "borrowed_per_customer": 422,
+        "days_with_a_payment_overdue": 0.4328,
+        "payments_given_up_per_100_customers": 91.7,
+        "days_warned": 0.0,
+        "days_advice_changed_spending": 0.0
+      },
+      "25% adoption": {
+        "very_hard_days": 0.0054,
+        "hard_days": 0.0156,
+        "days_short_of_plan": 0.0185,
+        "spending_met": 0.9852,
+        "customers_who_borrowed": 0.1,
+        "borrowed_per_customer": 223,
+        "days_with_a_payment_overdue": 0.4199,
+        "payments_given_up_per_100_customers": 83.3,
+        "days_warned": 0.0328,
+        "days_advice_changed_spending": 0.0274
+      },
+      "50% adoption": {
+        "very_hard_days": 0.0062,
+        "hard_days": 0.0234,
+        "days_short_of_plan": 0.0196,
+        "spending_met": 0.9685,
+        "customers_who_borrowed": 0.1,
+        "borrowed_per_customer": 223,
+        "days_with_a_payment_overdue": 0.4043,
+        "payments_given_up_per_100_customers": 78.3,
+        "days_warned": 0.0621,
+        "days_advice_changed_spending": 0.0543
+      },
+      "75% adoption": {
+        "very_hard_days": 0.0051,
+        "hard_days": 0.0288,
+        "days_short_of_plan": 0.0196,
+        "spending_met": 0.9567,
+        "customers_who_borrowed": 0.1,
+        "borrowed_per_customer": 182,
+        "days_with_a_payment_overdue": 0.3992,
+        "payments_given_up_per_100_customers": 75.0,
+        "days_warned": 0.0946,
+        "days_advice_changed_spending": 0.0812
+      },
+      "100% adoption": {
+        "very_hard_days": 0.0054,
+        "hard_days": 0.0349,
+        "days_short_of_plan": 0.0175,
+        "spending_met": 0.9422,
+        "customers_who_borrowed": 0.1,
+        "borrowed_per_customer": 130,
+        "days_with_a_payment_overdue": 0.4038,
+        "payments_given_up_per_100_customers": 70.0,
+        "days_warned": 0.1309,
+        "days_advice_changed_spending": 0.1129
+      }
+    },
+    {
+      "persona": "freelancer",
+      "label": "Freelancer",
+      "without": {
+        "very_hard_days": 0.1473,
+        "hard_days": 0.1532,
+        "days_short_of_plan": 0.1613,
+        "spending_met": 0.859,
+        "customers_who_borrowed": 0.5167,
+        "borrowed_per_customer": 1585,
+        "days_with_a_payment_overdue": 0.111,
+        "payments_given_up_per_100_customers": 103.3,
+        "days_warned": 0.0,
+        "days_advice_changed_spending": 0.0
+      },
+      "25% adoption": {
+        "very_hard_days": 0.1366,
+        "hard_days": 0.1487,
+        "days_short_of_plan": 0.1481,
+        "spending_met": 0.8533,
+        "customers_who_borrowed": 0.5,
+        "borrowed_per_customer": 1350,
+        "days_with_a_payment_overdue": 0.1118,
+        "payments_given_up_per_100_customers": 101.7,
+        "days_warned": 0.0535,
+        "days_advice_changed_spending": 0.0527
+      },
+      "50% adoption": {
+        "very_hard_days": 0.1312,
+        "hard_days": 0.1476,
+        "days_short_of_plan": 0.1417,
+        "spending_met": 0.8557,
+        "customers_who_borrowed": 0.5,
+        "borrowed_per_customer": 1175,
+        "days_with_a_payment_overdue": 0.1164,
+        "payments_given_up_per_100_customers": 106.7,
+        "days_warned": 0.0911,
+        "days_advice_changed_spending": 0.0898
+      },
+      "75% adoption": {
+        "very_hard_days": 0.1274,
+        "hard_days": 0.1478,
+        "days_short_of_plan": 0.1374,
+        "spending_met": 0.8507,
+        "customers_who_borrowed": 0.5,
+        "borrowed_per_customer": 1085,
+        "days_with_a_payment_overdue": 0.1202,
+        "payments_given_up_per_100_customers": 113.3,
+        "days_warned": 0.1368,
+        "days_advice_changed_spending": 0.1352
+      },
+      "100% adoption": {
+        "very_hard_days": 0.1183,
+        "hard_days": 0.1444,
+        "days_short_of_plan": 0.125,
+        "spending_met": 0.8506,
+        "customers_who_borrowed": 0.5,
+        "borrowed_per_customer": 743,
+        "days_with_a_payment_overdue": 0.1188,
+        "payments_given_up_per_100_customers": 113.3,
+        "days_warned": 0.1917,
+        "days_advice_changed_spending": 0.1898
+      }
+    }
+  ]
+}
