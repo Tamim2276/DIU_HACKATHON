@@ -49,7 +49,7 @@ That leaves a buffer inside the 2-hour mark for the Must steps alone, and the Sh
 - [x] 5. Add a visible "not a guarantee" disclaimer
 - [ ] 6. Add an adoption-rate sensitivity analysis to the impact test
 - [x] 7. Give the ৳0 customers an action, not just an explanation (stretch)
-- [ ] 8. Run a basic load test and record the numbers (stretch)
+- [x] 8. Run a basic load test and record the numbers (stretch)
 - [x] 9. Write up the remaining judge comments that need no code (stretch)
 
 ---
