@@ -45,12 +45,12 @@ That leaves a buffer inside the 2-hour mark for the Must steps alone, and the Sh
 - [x] 1. Fix the cushion-vs-usual-spending wording
 - [x] 2. Keep the live demo awake for judges
 - [x] 3. Put the warning's baseline comparison in the README
-- [ ] 4. Add a banned-phrase filter and prompt-injection tests
+- [x] 4. Add a banned-phrase filter and prompt-injection tests
 - [x] 5. Add a visible "not a guarantee" disclaimer
 - [ ] 6. Add an adoption-rate sensitivity analysis to the impact test
-- [ ] 7. Give the ৳0 customers an action, not just an explanation (stretch)
+- [x] 7. Give the ৳0 customers an action, not just an explanation (stretch)
 - [ ] 8. Run a basic load test and record the numbers (stretch)
-- [ ] 9. Write up the remaining judge comments that need no code (stretch)
+- [x] 9. Write up the remaining judge comments that need no code (stretch)
 
 ---
 
