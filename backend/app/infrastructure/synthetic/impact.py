@@ -97,8 +97,14 @@ class UserRun:
     days_followed: int = 0
 
 
-def simulate(policy: str = WITHOUT, cfg: Settings = settings, every: int = 1) -> list[UserRun]:
-    """All customers (or one in `every`) over the whole year; returns their test-period days."""
+def simulate(policy: str = WITHOUT, cfg: Settings = settings, every: int = 1, adoption: float = 1.0) -> list[UserRun]:
+    """All customers (or one in `every`) over the whole year; returns their test-period days.
+
+    `adoption` is the share of customers who act on Agam's advice in this run; the rest are
+    simulated exactly as in the `without` run. It decides who follows with a draw that is
+    independent of `master`, so the same `adoption` always picks the same customers and the
+    underlying synthetic data for every customer stays exactly what `generate()` produced.
+    """
     forecaster = QuantileForecaster(cfg.model_dir, cfg) if policy != WITHOUT else None
     window = eid_window(cfg)
     first, last = (cfg.test_start - cfg.start_date).days, (cfg.test_end - cfg.start_date).days
@@ -110,7 +116,8 @@ def simulate(policy: str = WITHOUT, cfg: Settings = settings, every: int = 1) ->
             seed = int(master.integers(1 << 32))  # the same draw, in the same order, as generate()
             if (number - 1) % every:
                 continue
-            follower = Follower(forecaster, cfg, policy) if forecaster else None
+            follows = np.random.default_rng(seed ^ 0x5EED).random() < adoption
+            follower = Follower(forecaster, cfg, policy) if forecaster and follows else None
             trace: list = []
             simulate_user(f"U{number:04d}", persona, np.random.default_rng(seed), cfg, window, advisor=follower, trace=trace)
             days = [row for row in trace if first <= row[0] <= last]
@@ -211,9 +218,53 @@ def run_impact_test(cfg: Settings = settings, every: int = 1) -> dict:
     return compare(without, followed, cfg)
 
 
-def save_impact(results: dict, report_dir: Path) -> Path:
+ADOPTION_LEVELS = (0.25, 0.5, 0.75, 1.0)
+ADOPTION_FILE = "impact_sensitivity.json"
+
+
+def run_adoption_sensitivity(cfg: Settings = settings, every: int = 1, levels=ADOPTION_LEVELS) -> dict:
+    """How the impact changes if only a share of customers act on a warning.
+
+    The 65% cut in borrowing (see run_impact_test) assumes every warned customer follows the
+    advice. This answers the obvious objection: what if only a quarter, or half, do?
+    """
+    without = simulate(WITHOUT, cfg, every)
+    with ProcessPoolExecutor(max_workers=len(levels)) as pool:
+        jobs = {f"{round(level * 100)}% adoption": pool.submit(simulate, WHEN_WARNED, cfg, every, level)
+                for level in levels}
+        followed = {name: job.result() for name, job in jobs.items()}
+    return compare(without, followed, cfg)
+
+
+def format_adoption_sensitivity(results: dict) -> str:
+    """The sensitivity results as a plain text table: borrowed per customer at each adoption level."""
+    about, runs = results["about"], results["runs"]
+    levels = [name for name in runs if name != WITHOUT]
+    lines = [f"{about['customers']} customers, {about['period']['from']} to {about['period']['to']}. "
+             "All data is synthetic.", "",
+             f"{'':28}{'without':>12}" + "".join(f"{level:>16}" for level in levels)]
+    names = {
+        "borrowed_per_customer": "taka borrowed per customer",
+        "very_hard_days": "days with under a quarter of the need met",
+        "hard_days": "days with under half the need met",
+        "spending_met": "share of wanted spending spent",
+    }
+    shares = {"very_hard_days", "hard_days", "spending_met"}
+    for key, name in names.items():
+        without_cell = f"{runs[WITHOUT][key]:.1%}" if key in shares else f"{runs[WITHOUT][key]:,.0f}"
+        cells = [f"{runs[level][key]:.1%}" if key in shares else f"{runs[level][key]:,.0f}" for level in levels]
+        lines.append(f"{name:28}{without_cell:>12}" + "".join(f"{cell:>16}" for cell in cells))
+    lines.append("")
+    for level in levels:
+        change = results["changes"][level]["borrowed_per_customer"]
+        lines.append(f"borrowed per customer, {level}: {change['change']:+,.0f} "
+                     f"(between {change['low']:+,.0f} and {change['high']:+,.0f})")
+    return "\n".join(lines)
+
+
+def save_impact(results: dict, report_dir: Path, file_name: str = IMPACT_FILE) -> Path:
     report_dir.mkdir(parents=True, exist_ok=True)
-    path = report_dir / IMPACT_FILE
+    path = report_dir / file_name
     path.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     return path
 

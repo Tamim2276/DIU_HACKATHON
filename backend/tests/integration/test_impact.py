@@ -57,6 +57,13 @@ def test_following_the_advice_changes_what_a_warned_customer_spends(without, war
     assert all(run.days_followed <= run.days_warned for run in warned)  # advice is only followed on warned days
 
 
+def test_adoption_changes_how_many_customers_the_advice_reaches(warned):
+    none = simulate(WHEN_WARNED, settings, EVERY, adoption=0.0)
+    all_ = simulate(WHEN_WARNED, settings, EVERY, adoption=1.0)
+    assert sum(run.days_followed for run in none) == 0
+    assert sum(run.days_followed for run in all_) == sum(run.days_followed for run in warned)
+
+
 def test_a_run_is_summed_up_in_shares_between_zero_and_one(without, warned):
     for runs in (without, warned):
         figures = summarize(runs)
