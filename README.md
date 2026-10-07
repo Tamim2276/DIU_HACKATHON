@@ -307,6 +307,18 @@ Judges asked for evidence and arguments that need no new code. This section answ
 - Basic drift monitoring: the same error and warning-quality measures already in `evaluate_model.py`, re-run on a schedule against real outcomes, so a silent drop in forecast quality is caught rather than discovered by a customer.
 - Where PII would be tokenized before it reaches the model, in any real integration with upay's systems.
 
+**A real load number, not a guess.** We ran [k6](https://k6.io) at 100 concurrent users for 30 seconds against the live forecast endpoint:
+
+```javascript
+import http from "k6/http";
+export const options = { vus: 100, duration: "30s" };
+export default function () {
+  http.get("https://agam-api-suu9.onrender.com/users/U0121/forecast?as_of=2026-08-12");
+}
+```
+
+The free-tier single instance handled it badly: a median response time of 36.0 seconds and a 95th-percentile of 37.1 seconds, with every one of the 105 completed requests eventually succeeding (0% failed) — consistent with requests queuing behind one worker process rather than being refused outright. Run twice, on machines under very different local load, with the same result each time, so this is a real server-side limit, not noise. This is the number Judge 3 asked for in place of "17 ms on a laptop," and it is the concrete case for the batch-scoring and monitoring work described above: computing a forecast live, on a single free instance, on every request, does not hold up under concurrent load, and a real deployment would need to fix that before it could carry more than a handful of simultaneous users.
+
 ## More to read
 
 | File | What it is for |
