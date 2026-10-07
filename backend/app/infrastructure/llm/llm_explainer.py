@@ -83,6 +83,15 @@ FACT_NAMES = {
 BANGLA_LETTER = re.compile(r"[ঀ-৥ৰ-৲৴-৿]")  # not the digits, not the taka sign
 LATIN_LETTER = re.compile(r"[A-Za-z]")
 
+# A second, independent check on the output: even if the model ignored its instructions (rule 3 of
+# INSTRUCTIONS), an answer that mentions a loan, borrowing, investing or a named payment service is
+# rejected outright, the same way an answer with an unknown number is.
+BANNED_PHRASES = re.compile(
+    r"\b(loans?|borrow\w*|lend\w*|credit\s+scores?|emi|interest\s+rates?|invest\w*|"
+    r"bkash|nagad|rocket|ঋণ|কর্জ|ধার|সুদ|বিনিয়োগ\w*|বিকাশ|নগদ|রকেট)\b",
+    re.IGNORECASE,
+)
+
 
 def _written(name: str, value) -> str:
     """One fact the way it should appear in an answer: whole taka, whole percent, day and month."""
@@ -122,6 +131,8 @@ def problem_with(answer: str, facts: Facts, language: str, question: str) -> str
     unknown = unknown_numbers(answer, facts, question)
     if unknown:
         return f"it contains numbers that are not among the facts: {unknown}"
+    if BANNED_PHRASES.search(answer):
+        return "it mentions something outside the app's allowed actions (banned phrase)"
     mostly_bangla = len(BANGLA_LETTER.findall(answer)) > len(LATIN_LETTER.findall(answer))
     if mostly_bangla != (language == BANGLA):
         return "it is not in the language asked for"
