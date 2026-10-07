@@ -39,7 +39,7 @@ Rafi does not do this sum. He sees ৳1,771 and feels fine. At ৳639 a day, tha
 
 **2. It forecasts his balance.** For each of the next 30 days it gives a range, not one number, because nobody knows exactly when the next payment will arrive. For 23 August it says: most likely ৳1,107, but it could be anywhere from ৳0 to ৳3,099.
 
-**3. It checks one rule.** The rule is: if the chance of the balance falling below a safety cushion reaches 40% on any day in the next two weeks, warn the customer. Rafi's cushion is ৳745, about one day of his spending. The chance passes 40% on 23 August and reaches 45%. So Agam warns him:
+**3. It checks one rule.** The rule is: if the chance of the balance falling below a safety cushion reaches 40% on any day in the next two weeks, warn the customer. Rafi's cushion is ৳745, about one day of his *typical* spending once rent and other regular payments are smoothed in — a little more than the ৳639 a day he spends on everyday things alone. The chance passes 40% on 23 August and reaches 45%. So Agam warns him:
 
 > You may run short around Sun, 23 Aug. That is in 11 days.
 
@@ -123,7 +123,7 @@ The app shows these limits on its Model screen.
 | --- | --- |
 | Balance | The money in the wallet at the end of a day |
 | Forecast | The balance we expect on a future day, with a range around it |
-| Safety cushion | The least a customer should keep: about one day of their usual spending |
+| Safety cushion | The least a customer should keep: about one day of their typical spending, with rent and other regular payments smoothed in — a broader figure than "everyday spending" alone |
 | Shortfall | The balance falling below the safety cushion |
 | Warning | Shown when the chance of a shortfall reaches 40% within 14 days |
 | Safe to spend | What the customer can spend each day and still make every regular payment on time until their next income |

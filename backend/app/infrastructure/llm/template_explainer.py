@@ -35,17 +35,21 @@ SENTENCES = {
     ENGLISH: {
         # no warning
         "clear": "No shortfall warning for the next {days} days.",
-        "balance_ok": "Your balance is ৳{balance}, above your safety cushion of ৳{cushion}.",
-        "balance_low": "Your balance is ৳{balance} today, below your safety cushion of ৳{cushion}, "
+        "balance_ok": "Your balance is ৳{balance}, above your safety cushion of ৳{cushion} "
+                      "(about a day of your typical spending, rent and other regular payments included).",
+        "balance_low": "Your balance is ৳{balance} today, below your safety cushion of ৳{cushion} "
+                       "(about a day of your typical spending, rent and other regular payments included), "
                        "but the forecast expects it to rise above that level again.",
         "safe": "You can spend about ৳{safe} a day until {until}.",
         "safe_none": "Until {until} there is no money left over for everyday spending once your regular payments "
                      "are made on time and your safety cushion is kept. Keep it as low as you can.",
         # what is likely to happen
         "alert": "Your wallet may run short around {day}. The chance is about {chance}%.",
-        "gap": "In a cautious estimate your balance falls about ৳{gap} below your safety cushion of ৳{cushion}.",
+        "gap": "In a cautious estimate your balance falls about ৳{gap} below your safety cushion of ৳{cushion} "
+              "(about a day of your typical spending, rent and other regular payments included).",
         "gap_empty": "In a cautious estimate your wallet runs empty.",
-        "alert_low_now": "Your balance is ৳{balance} today, already below your safety cushion of ৳{cushion}. "
+        "alert_low_now": "Your balance is ৳{balance} today, already below your safety cushion of ৳{cushion} "
+                         "(about a day of your typical spending, rent and other regular payments included). "
                          "It may be short again in the next {days} days. The chance is about {chance}%.",
         # why
         "why": "Why:",
@@ -75,18 +79,21 @@ SENTENCES = {
     BANGLA: {
         # no warning
         "clear": "আগামী {days} দিনে টাকার টান পড়ার কোনো সতর্কতা নেই।",
-        "balance_ok": "আপনার ব্যালেন্স ৳{balance}, যা নিরাপদ সীমার (৳{cushion}) উপরে আছে।",
-        "balance_low": "আজ আপনার ব্যালেন্স ৳{balance}, যা নিরাপদ সীমার (৳{cushion}) নিচে। "
-                       "তবে পূর্বাভাস অনুযায়ী এটি আবার সীমার উপরে উঠবে।",
+        "balance_ok": "আপনার ব্যালেন্স ৳{balance}, যা নিরাপদ সীমার (৳{cushion}, নিয়মিত খরচসহ আপনার সাধারণ "
+                      "একদিনের খরচের সমান) উপরে আছে।",
+        "balance_low": "আজ আপনার ব্যালেন্স ৳{balance}, যা নিরাপদ সীমার (৳{cushion}, নিয়মিত খরচসহ আপনার সাধারণ "
+                       "একদিনের খরচের সমান) নিচে। তবে পূর্বাভাস অনুযায়ী এটি আবার সীমার উপরে উঠবে।",
         "safe": "{until} পর্যন্ত দিনে প্রায় ৳{safe} খরচ করতে পারেন।",
         "safe_none": "নিয়মিত পেমেন্ট সময়মতো দিলে আর নিরাপদ সীমা ধরে রাখলে {until} পর্যন্ত দৈনন্দিন খরচের জন্য কিছু "
                      "থাকছে না। খরচ যতটা সম্ভব কম রাখুন।",
         # what is likely to happen
         "alert": "{day} নাগাদ আপনার ওয়ালেটে টাকার টান পড়তে পারে। এর সম্ভাবনা প্রায় {chance}%।",
-        "gap": "সাবধানী হিসাবে আপনার ব্যালেন্স নিরাপদ সীমার (৳{cushion}) চেয়ে প্রায় ৳{gap} নিচে নামতে পারে।",
+        "gap": "সাবধানী হিসাবে আপনার ব্যালেন্স নিরাপদ সীমার (৳{cushion}, নিয়মিত খরচসহ আপনার সাধারণ একদিনের "
+              "খরচের সমান) চেয়ে প্রায় ৳{gap} নিচে নামতে পারে।",
         "gap_empty": "সাবধানী হিসাবে আপনার ওয়ালেট পুরোপুরি খালি হয়ে যেতে পারে।",
-        "alert_low_now": "আজ আপনার ব্যালেন্স ৳{balance}, যা এখনই নিরাপদ সীমার (৳{cushion}) নিচে। "
-                         "আগামী {days} দিনেও টাকার টান থাকতে পারে। এর সম্ভাবনা প্রায় {chance}%।",
+        "alert_low_now": "আজ আপনার ব্যালেন্স ৳{balance}, যা এখনই নিরাপদ সীমার (৳{cushion}, নিয়মিত খরচসহ আপনার "
+                         "সাধারণ একদিনের খরচের সমান) নিচে। আগামী {days} দিনেও টাকার টান থাকতে পারে। এর সম্ভাবনা "
+                         "প্রায় {chance}%।",
         # why
         "why": "কারণ:",
         INCOME_LATER: "আপনার পরের আয় আসার কথা {income_day}, অর্থাৎ আরও {days_to_income} দিন পরে।",

@@ -78,16 +78,16 @@ export default {
     allClear: "All clear",
     shortfallTitle: (day) => `You may run short around ${day}`,
     shortfallText: (when, cushion, oneDay) =>
-      `That is ${when}. Your balance may drop below your safety cushion of ${cushion}${oneDay ? ", about one day of your spending" : ""}.`,
+      `That is ${when}. Your balance may drop below your safety cushion of ${cushion}${oneDay ? ", about one day of your typical spending (rent and other regular payments included)" : ""}.`,
     lowNowTitle: "Your balance is already low",
     lowNowText: (balance, cushion, period) =>
-      `You have ${balance} today. That is under your safety cushion of ${cushion}. It may stay low for the next ${period}.`,
+      `You have ${balance} today. That is under your safety cushion of ${cushion} (about one day of your typical spending, rent and other regular payments included). It may stay low for the next ${period}.`,
     recoveringTitle: "Low today, but it should recover",
     recoveringText: (balance, cushion, period) =>
-      `You have ${balance} today, under your safety cushion of ${cushion}. We expect money to come in, so there is no warning for the next ${period}.`,
+      `You have ${balance} today, under your safety cushion of ${cushion} (about one day of your typical spending, rent and other regular payments included). We expect money to come in, so there is no warning for the next ${period}.`,
     recoveringButPayments: "But the payments you have to make are more than the money we expect. See Safe to spend below.",
     clearTitle: (period) => `No warning for the next ${period}`,
-    clearText: (balance, cushion) => `You have ${balance}. That is above your safety cushion of ${cushion}.`,
+    clearText: (balance, cushion) => `You have ${balance}. That is above your safety cushion of ${cushion} (about one day of your typical spending, rent and other regular payments included).`,
     chance: "chance of running short",
     short: "how much you could be short",
     left: "could be left in your wallet",
@@ -127,8 +127,8 @@ export default {
     title: "Balance",
     asOf: (day) => `At the end of ${day}.`,
     cushion: "Safety cushion",
-    cushionOneDay: "The least you should keep: about one day of your spending. We warn when your balance may drop below it.",
-    cushionDays: (n) => `The least you should keep: about ${n} days of your spending. We warn when your balance may drop below it.`,
+    cushionOneDay: "The least you should keep: about one day of your typical spending, rent and other regular payments included. We warn when your balance may drop below it.",
+    cushionDays: (n) => `The least you should keep: about ${n} days of your typical spending, rent and other regular payments included. We warn when your balance may drop below it.`,
   },
 
   coming: {
