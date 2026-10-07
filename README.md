@@ -283,11 +283,29 @@ So following the warnings cut borrowing by about 65% and reduced the worst days,
 - Warnings are least reliable for small shop owners and ride-share riders, whose income arrives day by day (ranking quality 0.61 and 0.71, against 0.84 overall).
 - The range is too narrow for freelancers: it held the real balance 69% of the time instead of 80%.
 - The warning looks only at the forecast balance. A customer who pays a bill late keeps a higher balance, so a missed payment does not always raise a warning.
-- Safe to spend is often ৳0 for people paid day by day whose wallet is nearly empty: in a sample of July and August days, on 17% of rider days and 24% of shop-owner days. The number is honest, because a payment falls due before the money for it has come in, but the app then has no spending step to offer.
+- Safe to spend is often ৳0 for people paid day by day whose wallet is nearly empty: in a sample of July and August days, on 17% of rider days and 24% of shop-owner days. The number is honest, because a payment falls due before the money for it has come in. When one of the customer's regular payments is the specific cause and the forecast balance recovers above the cushion within 10 days on its own, the app now offers to move that payment instead of leaving the customer with only an explanation; it still has nothing to suggest when no single payment is clearly responsible, or when the balance does not recover in that window either.
 - The amounts and probabilities in the synthetic data are our guesses. They were not fitted to real data.
 - The follow-up answers depend on a free language model plan that allows only a few questions a minute.
 
 The assumptions behind the data are listed in full in [docs/SYNTHETIC_DATA.md](docs/SYNTHETIC_DATA.md).
+
+## Responding to the Phase 1 review
+
+Judges asked for evidence and arguments that need no new code. This section answers those comments directly; the full build plan behind it, including what was deliberately left out and why, is in [docs/PHASE2_BUILD_GUIDE.md](docs/PHASE2_BUILD_GUIDE.md).
+
+**How big is this problem?** Bangladesh Bank's own MFS comparative statistics report about 239 million MFS accounts as of January 2025, up from 219 million a year earlier, served by 13 providers and 1.83 million agents — though only about 37.6% of accounts are active ([Bangladesh Bank MFS data](https://www.bb.org.bd/en/index.php/financialactivity/mfsdata)). Riders, shop owners, daily-wage and informal workers are a large share of that active base, so Agam's target segment plausibly numbers in the tens of millions, not thousands. Separately, research into Bangladesh's informal sector found that about 90% of informal workers experienced a drop in income or food spending during an income shock ([PMC: COVID-19 and the informal sector in Bangladesh](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8970377/)), and the World Bank's Global Findex work finds that roughly 11% of adults in developing economies carry emergency or health-related debt, most of it informal and outside any bank ([Global Findex Database 2025](https://thedocs.worldbank.org/en/doc/a4aaae5a017a5bea7922686af0ed3636-0050022025/original/PolicyResearchTalk-GlobalFindex-September2025.pdf)). None of this is Agam's own data collection, and we say so plainly — but it is real, checkable evidence that income volatility routinely forces borrowing, in exactly the population this feature targets.
+
+**upay's own revenue, honestly.** Fewer emergency cash-outs means less of upay's 1.4% fee income from that specific behaviour, and a reviewer will notice that tension if we do not name it ourselves. The argument for building it anyway: a customer who opens the wallet to *plan*, not only to pay, is a more engaged customer, and engagement is what reduces churn to a competing wallet. Balance kept inside the wallet instead of pre-emptively cashed out as a buffer is balance upay can still earn from in other ways, and a trusted planning feature is a plausible base for a future cross-sell (savings products, bill-pay reminders) that does not exist today. This is an argument, not a measured result — the honest next step is the controlled pilot below.
+
+**What a pilot would measure.** Weekly active use of the feature; cash-out frequency; late or missed bill payments; average wallet balance; all compared between customers who see the warning and a held-out control group who see only the forecast, without the warning or the actions — a simple A/B split that isolates what the warning itself adds on top of the forecast.
+
+**What real-world scale would need.** The architecture already separates these concerns (`app/application/ports`), so each of these is a matter of swapping an adapter behind an existing interface, not a rewrite:
+
+- A PostgreSQL or SQLite adapter behind the existing `TransactionRepository` port, in place of the flat CSV files used for this synthetic prototype.
+- Customer auth tokens in place of the open `/users` list the demo uses, and rate limiting on every endpoint — both absent today, which is a known, deliberate gap for a hackathon demo, not an oversight.
+- A nightly batch-scoring job that forecasts every customer once and caches the result, which is how this would actually run at upay's scale rather than computing a forecast on every page load.
+- Basic drift monitoring: the same error and warning-quality measures already in `evaluate_model.py`, re-run on a schedule against real outcomes, so a silent drop in forecast quality is caught rather than discovered by a customer.
+- Where PII would be tokenized before it reaches the model, in any real integration with upay's systems.
 
 ## More to read
 
