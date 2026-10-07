@@ -329,4 +329,5 @@ The free-tier single instance handled it badly: a median response time of 36.0 s
 | [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md) | Showing it to the judges |
 | [docs/BUILD_GUIDE.md](docs/BUILD_GUIDE.md) | How it was built, step by step |
 | [docs/PHASE2_BUILD_GUIDE.md](docs/PHASE2_BUILD_GUIDE.md) | What we built during the on-site update window, and why |
+| [docs/PHASE2_PRESENTATION.md](docs/PHASE2_PRESENTATION.md) | Presenting the Phase 2 update to judges, point by point |
 | [docs/SYNTHETIC_DATA.md](docs/SYNTHETIC_DATA.md) | Every assumption behind the data |
