@@ -121,6 +121,7 @@ export default {
     sum: (left, period, amount) => `${left} over ${period} is ${amount} a day, rounded down.`,
     sumNothing: "Nothing is left, so the safe amount is ৳0.",
     fixed: "This is a fixed formula, not a guess by AI.",
+    estimateNote: "This is an estimate, not a guarantee.",
   },
 
   balance: {
@@ -157,6 +158,7 @@ export default {
     title: (n) => `Your balance for the next ${n} days`,
     showActual: "Show what really happened",
     read: "The green line is what we expect. The shaded area shows how much higher or lower it could be.",
+    estimateNote: "This is an estimate, not a guarantee.",
     lowest: (day) => `lowest point we expect, on ${day}`,
     cautious: (day) => `lowest point if things go badly, on ${day}`,
     last: (day) => `what we expect on ${day}, the last day`,

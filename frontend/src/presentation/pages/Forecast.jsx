@@ -55,6 +55,7 @@ export default function Forecast({ users, meta, selection, forecastState, goTo }
           )}
         </div>
         <p className="card-text wide">{text.read}</p>
+        <p className="footnote">{text.estimateNote}</p>
 
         <ForecastChart forecast={forecast} showActual={showActual} />
         <ChartKey showActual={showActual} />

@@ -35,6 +35,7 @@ export default function SafeToSpend({ forecast }) {
       </p>
       <p className="card-text">{summary}</p>
       {usual >= 1 && <p className="card-text">{text.usual(f.taka(usual))}</p>}
+      <p className="footnote">{text.estimateNote}</p>
 
       <details className="how">
         <summary>{text.how}</summary>
