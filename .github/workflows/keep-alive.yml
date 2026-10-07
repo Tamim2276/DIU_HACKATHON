@@ -1,0 +1,10 @@
+name: Keep the API awake
+on:
+  schedule:
+    - cron: "*/10 7-16 * * *"   # every 10 minutes, 1pm-10pm BST, the hours judging is likely to happen
+  workflow_dispatch: {}          # a manual "Run workflow" button, for right before judging starts
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS https://agam-api-suu9.onrender.com/health
