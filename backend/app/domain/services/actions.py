@@ -11,6 +11,7 @@ from app.domain.entities.forecast import Forecast, ForecastPoint
 from app.domain.entities.regular_payment import DuePayment, RegularPayment
 from app.domain.entities.transaction import MONEY_OUT, Transaction
 from app.domain.services.safe_to_spend import SafeToSpend
+from app.domain.services.shortfall import safety_cushion
 
 KEEP_TO_SAFE_SPEND = "keep_to_safe_spend"
 MOVE_PAYMENT = "move_payment"
@@ -44,12 +45,17 @@ def _day(day: date) -> str:
     return f"{day.day} {day:%b}"
 
 
-def _action(forecast: Forecast, id: str, title: str, changes: list[float], details: dict) -> Action | None:
+def _action_at(forecast: Forecast, id: str, title: str, changes: list[float], details: dict,
+               day_index: int) -> Action | None:
     changes = tuple(round(change, 2) for change in changes)
-    effect = changes[lowest_day(forecast)]
+    effect = changes[day_index]
     if effect < SMALLEST_EFFECT:
-        return None  # it does not help on the tightest day, so it is not suggested
+        return None  # it does not help on the day that matters for this action, so it is not suggested
     return Action(id=id, title=title, effect=effect, changes=changes, details=details)
+
+
+def _action(forecast: Forecast, id: str, title: str, changes: list[float], details: dict) -> Action | None:
+    return _action_at(forecast, id, title, changes, details, lowest_day(forecast))
 
 
 def _keep_to_safe_spend(forecast: Forecast, plan: SafeToSpend, everyday: float) -> Action | None:
@@ -66,28 +72,56 @@ def _keep_to_safe_spend(forecast: Forecast, plan: SafeToSpend, everyday: float) 
 
 
 def _move_payment(forecast: Forecast, regular: list[RegularPayment], due: list[DuePayment],
-                  income_day: date | None) -> Action | None:
+                  income_day: date | None, plan: SafeToSpend | None = None) -> Action | None:
     """Pay the largest monthly payment that falls shortly before the income day on the day after it instead.
 
     Only a payment due within a few days of the income is offered. Moving one by
     weeks would mean skipping it, which is not a change of date.
+
+    Income that is daily or irregular has no fixed day to move a payment past (`income_day` is
+    None). For these customers the old rule above never offered this action at all, even when
+    nothing was safe to spend (`plan.amount <= 0`) because one large payment fell before enough
+    money had arrived -- exactly the customers who need an action most, not fewer. Instead, when
+    the formula's own tightest day names the payment causing the squeeze, this offers the
+    earliest day, within MAX_MOVE_DAYS, that the forecast's own most-likely balance recovers
+    above the safety cushion on its own. Its effect is measured on the payment's own due day, not
+    the forecast's single lowest day elsewhere in the 30 days: for volatile, day-by-day income
+    that lowest day is often unrelated to this specific payment, which is part of why these
+    customers were otherwise filtered out.
     """
-    if income_day is None:
-        return None
     monthly = {payment.recipient for payment in regular if payment.payments_per_month == 1}
-    before_income = [d for d in due if d.recipient in monthly and forecast.as_of < d.due < income_day
-                     and (income_day - d.due).days <= MAX_MOVE_DAYS]
-    if not before_income:
+    if income_day is not None:
+        before_income = [d for d in due if d.recipient in monthly and forecast.as_of < d.due < income_day
+                         and (income_day - d.due).days <= MAX_MOVE_DAYS]
+        if not before_income:
+            return None
+        payment = max(before_income, key=lambda d: d.amount)
+        new_day = income_day + timedelta(days=1)
+        day_index = lowest_day(forecast)
+        after = "after your income arrives"
+    elif plan is not None and plan.amount <= 0:
+        near_term = [d for d in due if d.recipient in monthly and forecast.as_of < d.due <= plan.tightest.day]
+        if not near_term:
+            return None
+        payment = max(near_term, key=lambda d: d.amount)
+        cushion = safety_cushion(forecast)
+        later = [point for point in forecast.points
+                if payment.due < point.day <= payment.due + timedelta(days=MAX_MOVE_DAYS)]
+        recovered = next((point for point in later if point.p50 >= cushion), None)
+        if recovered is None:
+            return None
+        new_day = recovered.day
+        day_index = next((i for i, point in enumerate(forecast.points) if point.day == payment.due),
+                         lowest_day(forecast))
+        after = "once your balance has more room"
+    else:
         return None
-    payment = max(before_income, key=lambda d: d.amount)
-    new_day = income_day + timedelta(days=1)
     changes = [payment.amount if payment.due <= point.day < new_day else 0.0 for point in forecast.points]
     name = payment.label.replace("_", " ")
-    title = (f"Move the {name} payment of ৳{payment.amount:,.0f} from {_day(payment.due)} "
-             f"to {_day(new_day)}, after your income arrives.")
-    return _action(forecast, MOVE_PAYMENT, title, changes,
-                   {"recipient": payment.recipient, "label": payment.label, "amount": payment.amount,
-                    "from": payment.due, "to": new_day})
+    title = f"Move the {name} payment of ৳{payment.amount:,.0f} from {_day(payment.due)} to {_day(new_day)}, {after}."
+    return _action_at(forecast, MOVE_PAYMENT, title, changes,
+                      {"recipient": payment.recipient, "label": payment.label, "amount": payment.amount,
+                       "from": payment.due, "to": new_day}, day_index)
 
 
 def _pay_directly(forecast: Forecast, transactions: list[Transaction]) -> Action | None:
@@ -112,7 +146,7 @@ def suggest_actions(forecast: Forecast, plan: SafeToSpend, regular: list[Regular
     everyday = everyday_spending_per_day(transactions, regular, forecast.as_of)
     candidates = [
         _keep_to_safe_spend(forecast, plan, everyday),
-        _move_payment(forecast, regular, due, income_day),
+        _move_payment(forecast, regular, due, income_day, plan),
         _pay_directly(forecast, transactions),
     ]
     actions = [action for action in candidates if action is not None]

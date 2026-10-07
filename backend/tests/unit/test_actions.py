@@ -160,6 +160,53 @@ def test_a_payment_made_several_times_a_month_is_not_moved():
     assert MOVE_PAYMENT not in suggest(regular=[supplier], due=due)
 
 
+# ---------- moving a payment without a fixed income day (daily or irregular income) ----------
+
+def thin_forecast(thin_until: int, balance: float = 300.0) -> Forecast:
+    """A forecast that is below the 400 taka cushion through day `thin_until`, then recovers to 500."""
+    points = []
+    for d in range(1, 31):
+        likely = 100.0 if d <= thin_until else 500.0
+        points.append(ForecastPoint(TODAY + timedelta(days=d), likely * 0.5, likely * 0.75, likely, likely * 1.25,
+                                    likely * 1.5, cautious_income=0.0))
+    return Forecast("U0001", TODAY, balance=balance, typical_daily_spending=400.0, points=tuple(points))
+
+
+def nothing_safe(tightest_day: date, payments_due: float) -> SafeToSpend:
+    tightest = DayCheck(day=tightest_day, days=(tightest_day - TODAY).days, cautious_income=0.0,
+                        payments_due=payments_due, cushion=0.0, savings=0.0, left_over=-payments_due)
+    return SafeToSpend(amount=0.0, window_days=(tightest_day - TODAY).days, until=tightest_day, balance=300.0,
+                       cautious_income=0.0, payments_due=payments_due, cushion=400.0, savings=0.0, tightest=tightest)
+
+
+def test_a_payment_can_be_moved_without_a_fixed_income_day_when_nothing_is_safe_to_spend():
+    # daily income, no fixed payday: a big payment two days out leaves nothing safe to spend.
+    # The balance recovers above the cushion on its own five days after the payment.
+    due_day = TODAY + timedelta(days=2)
+    payment = DuePayment("W-RENT", "house_rent", due_day, 2000.0)
+    action = suggest(forecast=thin_forecast(thin_until=6), plan=nothing_safe(due_day, 2000.0), due=[payment],
+                     income_day=None)[MOVE_PAYMENT]
+    assert action.details["from"] == due_day
+    assert action.details["to"] == TODAY + timedelta(days=7)  # the first day the balance is back at or above 400
+    assert action.effect == 2000.0  # measured on the payment's own due day, not the forecast's lowest day
+
+
+def test_no_payment_to_move_without_a_fixed_income_day_if_the_balance_never_recovers():
+    due_day = TODAY + timedelta(days=2)
+    payment = DuePayment("W-RENT", "house_rent", due_day, 2000.0)
+    # thin for the whole 10-day search window: no day to offer, so nothing is suggested
+    assert MOVE_PAYMENT not in suggest(forecast=thin_forecast(thin_until=20), plan=nothing_safe(due_day, 2000.0),
+                                       due=[payment], income_day=None)
+
+
+def test_no_payment_to_move_without_a_fixed_income_day_if_something_is_still_safe_to_spend():
+    # the old behaviour is unchanged when there is no income day but the customer is not at ৳0
+    due_day = TODAY + timedelta(days=2)
+    payment = DuePayment("W-RENT", "house_rent", due_day, 2000.0)
+    assert MOVE_PAYMENT not in suggest(forecast=thin_forecast(thin_until=6), plan=plan(amount=50.0), due=[payment],
+                                       income_day=None)
+
+
 def test_no_fee_action_without_cash_outs():
     assert PAY_DIRECTLY not in suggest(transactions=[spend(d, 300.0) for d in range(30)])
 
